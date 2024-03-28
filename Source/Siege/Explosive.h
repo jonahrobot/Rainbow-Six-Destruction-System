@@ -15,16 +15,12 @@ class SIEGE_API UExplosive : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UExplosive();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<FVector2D> Cut_Points;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		bool debugMode;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float cutSize;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float cutOffset;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int connectionToDraw;
 
 protected:
 	// Called when the game starts
@@ -32,7 +28,7 @@ protected:
 	void Explode();
 
 	TArray<FVector2D> Wall_Vectors;
-	TArray<FVector2D> Cut_Points;
+
 	Polygon Base_Polygon;
 	Polygon Cut_Polygon;
 	FVector actorScale;
@@ -40,5 +36,7 @@ protected:
 	FRotator actorRotation;
 
 	FVector LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FRotator ActorRotation, float x);
+
+	void Draw2DArray(TArray<FVector2D> array, FColor color);
 		
 };

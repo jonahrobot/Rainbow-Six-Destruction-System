@@ -30,26 +30,20 @@ void UExplosive::BeginPlay()
 
 	}
 	
-	// Get properties of attached wall
+	// Get properties of wall
 	actorScale = GetOwner()->GetActorScale() / 2 * 100;
 	actorOrigin = GetOwner()->GetActorLocation();
 	actorRotation = GetOwner()->GetActorRotation();
 
-	// Get corner of wall
+	// Create polygon size of wall surface
 	Wall_Vectors.Add(FVector2D(actorScale.Y, actorScale.Z)); // Top Left
 	Wall_Vectors.Add(FVector2D(-actorScale.Y, actorScale.Z)); // Top Right
 	Wall_Vectors.Add(FVector2D(-actorScale.Y, -actorScale.Z)); // Bottom Right
 	Wall_Vectors.Add(FVector2D(actorScale.Y, -actorScale.Z)); // Bottom Left
 
-	// Setup demo cut points
-	float const cutSizeOffset = cutOffset + cutSize;
-	Cut_Points.Add(FVector2D(cutOffset, cutOffset));
-	Cut_Points.Add(FVector2D(cutSizeOffset + 200, cutOffset));
-	Cut_Points.Add(FVector2D(cutSizeOffset, cutSizeOffset));
-	Cut_Points.Add(FVector2D(cutOffset, cutSizeOffset + 100));
-
-	// Process Edges
 	Base_Polygon = Polygon(Wall_Vectors);
+
+	// Turn cut points into polygon
 	Cut_Polygon = Polygon(Cut_Points);
 }
 
@@ -60,6 +54,13 @@ FVector UExplosive::LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FR
 	return ActorRotation.RotateVector(newVector) + ActorOrigin;
 }
 
+void UExplosive::Draw2DArray(TArray<FVector2D> array, FColor color) {
+	for (FVector2D const x : array) {
+		FVector XGlobal = LocalToGlobal(x, actorOrigin, actorRotation, actorScale.X);
+		DrawDebugSphere(GetWorld(), XGlobal, 25, 5, color, true, -1.f);
+	}
+}
+
 // Start explosion system
 void UExplosive::Explode() {
 	UE_LOG(LogTemp, Log, TEXT("- Explosion Triggered! -"));
@@ -68,24 +69,14 @@ void UExplosive::Explode() {
 	UE_LOG(LogTemp, Log, TEXT("Intersections: %f"), intersections.Num());
 
 	if (debugMode) {
-		for (FVector2D const x : Wall_Vectors) {
-			FVector XGlobal = LocalToGlobal(x, actorOrigin, actorRotation, actorScale.X);
-			DrawDebugSphere(GetWorld(), XGlobal, 25, 5, FColor::Blue, true, -1.f);
-		}
 
-		for (FVector2D const x : Cut_Points) {
-			FVector XGlobal = LocalToGlobal(x, actorOrigin, actorRotation, actorScale.X);
-			DrawDebugSphere(GetWorld(), XGlobal, 25, 5, FColor::Green, true, -1.f);
-		}
+		Draw2DArray(Wall_Vectors, FColor::Blue);
+		Draw2DArray(Cut_Points, FColor::Green);
 
 		Base_Polygon.draw_polygon(GetWorld(), actorOrigin, actorRotation, actorScale.X, FColor::Green);
 		Cut_Polygon.draw_polygon(GetWorld(), actorOrigin, actorRotation, actorScale.X, FColor::Red);
 
-		for (FVector2D const x : intersections) {
-
-			FVector XGlobal = LocalToGlobal(x, actorOrigin, actorRotation, actorScale.X);
-			DrawDebugSphere(GetWorld(), XGlobal, 25, 5, FColor::Orange, true, -1.f);
-		}
+		Draw2DArray(intersections, FColor::Orange);
 	}
 
 
