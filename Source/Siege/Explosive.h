@@ -4,8 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Polygon.h"
 #include "Explosive.generated.h"
-
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SIEGE_API UExplosive : public UActorComponent
@@ -26,16 +26,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		int connectionToDraw;
 
-	struct Edge {
-		FVector2D start;
-		FVector2D end;
-	};
-
-	struct Polygon {
-		TArray<Edge> edges;
-	};
-
-
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -50,10 +40,5 @@ protected:
 	FRotator actorRotation;
 
 	FVector LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FRotator ActorRotation, float x);
-	TArray<Edge> GetEdges(TArray<FVector2D> vectors);
-	bool check_in_range(float bound_A, float bound_B, float x);
-	bool GetIntersection(FVector2D& out, Edge edge_a, Edge edge_b);
-	void edge_to_line_standard_form(float& a, float& b, float& c, Edge e);
-	TArray<FVector2D> find_all_intersections(UExplosive::Polygon polygon_a, UExplosive::Polygon polygon_b);
 		
 };
