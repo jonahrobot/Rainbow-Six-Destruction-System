@@ -55,17 +55,64 @@ FVector UExplosive::LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FR
 }
 
 void UExplosive::Draw2DArray(TArray<FVector2D> array, FColor color) {
+	int a = 0;
 	for (FVector2D const x : array) {
 		FVector XGlobal = LocalToGlobal(x, actorOrigin, actorRotation, actorScale.X);
 		DrawDebugSphere(GetWorld(), XGlobal, 25, 5, color, true, -1.f);
+
+		FString Text = FString::Printf(TEXT("%i"), a);
+		FVector vector = actorRotation.RotateVector(FVector(100, x.X - 30, x.Y));
+		
+		DrawDebugString(GetWorld(), vector, Text, GetOwner(), color, -1.f,false, 2.0f);
+		a += 1;
 	}
 }
+
+// Returns true if X is between bound_A and bound_B
+bool check_in_range(float bound_A, float bound_B, float x) {
+
+	// Find our bounds
+	float lowerBound = std::floorf(std::min(bound_A, bound_B));
+	float upperBound = std::floorf(std::max(bound_A, bound_B));
+
+	// Check if x in bounds
+	return (lowerBound <= std::floorf(x)) && (std::floorf(x) <= upperBound);
+}
+
+TArray<FVector2D> addVertexInOrder(TArray<FVector2D> array, FVector2D v) {
+
+	for (int i = 0; i < array.Num(); i++) {
+
+		FVector2D start = array[i];
+		FVector2D end;
+		if (i == array.Num() - 1) {
+			end = array[0];
+		}
+		else {
+			end = array[i + 1];
+		}
+
+		if (check_in_range(start.X, end.X, v.X) && check_in_range(start.Y, end.Y, v.Y)) {
+			array.Insert(v, i+1);
+			return array;
+		}
+	}
+
+	return array;
+}
+
 
 // Start explosion system
 void UExplosive::Explode() {
 	UE_LOG(LogTemp, Log, TEXT("- Explosion Triggered! -"));
 
 	TArray<FVector2D> intersections = Base_Polygon.find_intersection_points(Cut_Polygon);
+
+	for (FVector2D const i : intersections) {
+		Wall_Vectors = addVertexInOrder(Wall_Vectors, i);
+		Cut_Points = addVertexInOrder(Cut_Points, i);
+	}
+
 	UE_LOG(LogTemp, Log, TEXT("Intersections: %f"), intersections.Num());
 
 	if (debugMode) {
@@ -76,20 +123,21 @@ void UExplosive::Explode() {
 		Base_Polygon.draw_polygon(GetWorld(), actorOrigin, actorRotation, actorScale.X, FColor::Green);
 		Cut_Polygon.draw_polygon(GetWorld(), actorOrigin, actorRotation, actorScale.X, FColor::Red);
 
-		Draw2DArray(intersections, FColor::Orange);
+		//Draw2DArray(intersections, FColor::Orange);
 	}
 
+	// Need to slot in intersection verts into Wall_vectors and Cut_Points
+	
+	// For each intersection
+		// Add to Wall Vectors
+		// Add to Cut points
 
-	// Create system that returns edges
-	// Edges are custom struct of two vectexes
-	// Function returns array of edges
-
-
-
-	// Triangulate
-
-	// Create new Mesh
-
-	// Delete old mesh
+	// Add vertex x in order
+		// For each vertex in list
+			// If distance from current -> x is less than next -> x && distance is less than known distance
+				// Save this spot as possible insert point
+				// Save distance
+			// Also exit if x == current, already point in list!
+		// Slot x inbetween saved spot! 
 
 }
