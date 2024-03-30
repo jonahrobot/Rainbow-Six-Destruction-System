@@ -79,12 +79,20 @@ bool check_in_range(float bound_A, float bound_B, float x) {
 	return (lowerBound <= std::floorf(x)) && (std::floorf(x) <= upperBound);
 }
 
-TArray<FVector2D> addVertexInOrder(TArray<FVector2D> array, FVector2D v) {
+// Add a given Vertex in clockwise vertex order
+TArray<FVector2D> UExplosive::addVertexInOrder(TArray<FVector2D> array, FVector2D v, bool markLeaving) {
 
+	if (array.Contains(v)) {
+		return array;
+	}
+
+	// For each vertex...
 	for (int i = 0; i < array.Num(); i++) {
 
+		// Get edge from vert[i] -> next vert in order
 		FVector2D start = array[i];
 		FVector2D end;
+
 		if (i == array.Num() - 1) {
 			end = array[0];
 		}
@@ -92,7 +100,29 @@ TArray<FVector2D> addVertexInOrder(TArray<FVector2D> array, FVector2D v) {
 			end = array[i + 1];
 		}
 
+		// If v is inbetween current edge, we found its place!
+		// Insert v between the start and end verts of the edge
 		if (check_in_range(start.X, end.X, v.X) && check_in_range(start.Y, end.Y, v.Y)) {
+
+			if (markLeaving) {
+
+				// Get point one step away from v->end
+				FVector2D dir = (end - v);
+				dir.Normalize(0.01f);
+				dir = v + dir;
+
+				// Also check if intersection is entering wall or leaving wall
+				FVector vector = actorRotation.RotateVector(FVector(100, v.X, v.Y - 30));
+
+				// Vertex is leaving if edge ends outside of polygon
+				if (!Base_Polygon.is_point_in_polygon(dir)) {
+					DrawDebugString(GetWorld(), vector, TEXT("Exit"), GetOwner(), FColor::Red, -1.f, false, 2.0f);
+				}
+				else {
+					DrawDebugString(GetWorld(), vector, TEXT("Enter"), GetOwner(), FColor::Green, -1.f, false, 2.0f);
+				}
+			}
+
 			array.Insert(v, i+1);
 			return array;
 		}
@@ -101,7 +131,6 @@ TArray<FVector2D> addVertexInOrder(TArray<FVector2D> array, FVector2D v) {
 	return array;
 }
 
-
 // Start explosion system
 void UExplosive::Explode() {
 	UE_LOG(LogTemp, Log, TEXT("- Explosion Triggered! -"));
@@ -109,8 +138,8 @@ void UExplosive::Explode() {
 	TArray<FVector2D> intersections = Base_Polygon.find_intersection_points(Cut_Polygon);
 
 	for (FVector2D const i : intersections) {
-		Wall_Vectors = addVertexInOrder(Wall_Vectors, i);
-		Cut_Points = addVertexInOrder(Cut_Points, i);
+		//Wall_Vectors = addVertexInOrder(Wall_Vectors, i, false);
+		Cut_Points = addVertexInOrder(Cut_Points, i, true);
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("Intersections: %f"), intersections.Num());
@@ -123,21 +152,7 @@ void UExplosive::Explode() {
 		Base_Polygon.draw_polygon(GetWorld(), actorOrigin, actorRotation, actorScale.X, FColor::Green);
 		Cut_Polygon.draw_polygon(GetWorld(), actorOrigin, actorRotation, actorScale.X, FColor::Red);
 
+		
 		//Draw2DArray(intersections, FColor::Orange);
 	}
-
-	// Need to slot in intersection verts into Wall_vectors and Cut_Points
-	
-	// For each intersection
-		// Add to Wall Vectors
-		// Add to Cut points
-
-	// Add vertex x in order
-		// For each vertex in list
-			// If distance from current -> x is less than next -> x && distance is less than known distance
-				// Save this spot as possible insert point
-				// Save distance
-			// Also exit if x == current, already point in list!
-		// Slot x inbetween saved spot! 
-
 }

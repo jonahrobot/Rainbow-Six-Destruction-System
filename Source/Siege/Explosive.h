@@ -36,6 +36,7 @@ protected:
 	FRotator actorRotation;
 
 	FVector LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FRotator ActorRotation, float x);
+	TArray<FVector2D> addVertexInOrder(TArray<FVector2D> array, FVector2D v, bool markLeaving);
 
 	void Draw2DArray(TArray<FVector2D> array, FColor color);
 		

@@ -83,6 +83,29 @@ bool Polygon::GetIntersection(FVector2D& out, Edge edge_a, Edge edge_b) {
 	return true;
 }
 
+// https://www.youtube.com/watch?v=RSXM9bgqxJM&list=LL&index=1
+bool Polygon::is_point_in_polygon(FVector2D p) {
+
+	int overlaps = 0;
+
+	for (Edge const e : this->edges) {
+
+		float x1 = e.start.X;
+		float y1 = e.start.Y;
+		float x2 = e.end.X;
+		float y2 = e.end.Y;
+
+		if ((p.Y < y1) != (p.Y < y2)) {
+			if (p.X < (x1 + ((p.Y - y1) / (y2 - y1)) * (x2 - x1))) {
+				overlaps += 1;
+			}
+		}
+	}
+
+	return overlaps % 2 == 1;
+
+}
+
 // Find all intersections between two polygons
 TArray<FVector2D> Polygon::find_intersection_points(Polygon other) {
 

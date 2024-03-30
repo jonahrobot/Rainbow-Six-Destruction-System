@@ -19,6 +19,8 @@ public:
 
 	void draw_polygon(UWorld* world, FVector center, FRotator worldRotation, float depth, FColor color);
 
+	bool is_point_in_polygon(FVector2D point);
+
 private:
 
 	TArray<Edge> edges;
