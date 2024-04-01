@@ -131,6 +131,11 @@ TArray<FVector2D> UExplosive::addVertexInOrder(TArray<FVector2D> array, FVector2
 	return array;
 }
 
+// Each point holds
+// FVector Position
+// Type (Enter, Exit, Normal)
+// Jump_To (If an exit)
+
 // Start explosion system
 void UExplosive::Explode() {
 	UE_LOG(LogTemp, Log, TEXT("- Explosion Triggered! -"));
