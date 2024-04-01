@@ -68,65 +68,65 @@ void UExplosive::Draw2DArray(TArray<FVector2D> array, FColor color) {
 	}
 }
 
-// Returns true if X is between bound_A and bound_B
-bool check_in_range(float bound_A, float bound_B, float x) {
-
-	// Find our bounds
-	float lowerBound = std::floorf(std::min(bound_A, bound_B));
-	float upperBound = std::floorf(std::max(bound_A, bound_B));
-
-	// Check if x in bounds
-	return (lowerBound <= std::floorf(x)) && (std::floorf(x) <= upperBound);
-}
+//// Returns true if X is between bound_A and bound_B
+//bool check_in_range(float bound_A, float bound_B, float x) {
+//
+//	// Find our bounds
+//	float lowerBound = std::floorf(std::min(bound_A, bound_B));
+//	float upperBound = std::floorf(std::max(bound_A, bound_B));
+//
+//	// Check if x in bounds
+//	return (lowerBound <= std::floorf(x)) && (std::floorf(x) <= upperBound);
+//}
 
 // Add a given Vertex in clockwise vertex order
 TArray<FVector2D> UExplosive::addVertexInOrder(TArray<FVector2D> array, FVector2D v, bool markLeaving) {
 
-	if (array.Contains(v)) {
-		return array;
-	}
+	//if (array.Contains(v)) {
+	//	return array;
+	//}
 
-	// For each vertex...
-	for (int i = 0; i < array.Num(); i++) {
+	//// For each vertex...
+	//for (int i = 0; i < array.Num(); i++) {
 
-		// Get edge from vert[i] -> next vert in order
-		FVector2D start = array[i];
-		FVector2D end;
+	//	// Get edge from vert[i] -> next vert in order
+	//	FVector2D start = array[i];
+	//	FVector2D end;
 
-		if (i == array.Num() - 1) {
-			end = array[0];
-		}
-		else {
-			end = array[i + 1];
-		}
+	//	if (i == array.Num() - 1) {
+	//		end = array[0];
+	//	}
+	//	else {
+	//		end = array[i + 1];
+	//	}
 
-		// If v is inbetween current edge, we found its place!
-		// Insert v between the start and end verts of the edge
-		if (check_in_range(start.X, end.X, v.X) && check_in_range(start.Y, end.Y, v.Y)) {
+	//	// If v is inbetween current edge, we found its place!
+	//	// Insert v between the start and end verts of the edge
+	//	if (check_in_range(start.X, end.X, v.X) && check_in_range(start.Y, end.Y, v.Y)) {
 
-			if (markLeaving) {
+	//		if (markLeaving) {
 
-				// Get point one step away from v->end
-				FVector2D dir = (end - v);
-				dir.Normalize(0.01f);
-				dir = v + dir;
+	//			// Get point one step away from v->end
+	//			FVector2D dir = (end - v);
+	//			dir.Normalize(0.01f);
+	//			dir = v + dir;
 
-				// Also check if intersection is entering wall or leaving wall
-				FVector vector = actorRotation.RotateVector(FVector(100, v.X, v.Y - 30));
+	//			// Also check if intersection is entering wall or leaving wall
+	//			FVector vector = actorRotation.RotateVector(FVector(100, v.X, v.Y - 30));
 
-				// Vertex is leaving if edge ends outside of polygon
-				if (!Base_Polygon.is_point_in_polygon(dir)) {
-					DrawDebugString(GetWorld(), vector, TEXT("Exit"), GetOwner(), FColor::Red, -1.f, false, 2.0f);
-				}
-				else {
-					DrawDebugString(GetWorld(), vector, TEXT("Enter"), GetOwner(), FColor::Green, -1.f, false, 2.0f);
-				}
-			}
+	//			// Vertex is leaving if edge ends outside of polygon
+	//			if (!Base_Polygon.is_point_in_polygon(dir)) {
+	//				DrawDebugString(GetWorld(), vector, TEXT("Exit"), GetOwner(), FColor::Red, -1.f, false, 2.0f);
+	//			}
+	//			else {
+	//				DrawDebugString(GetWorld(), vector, TEXT("Enter"), GetOwner(), FColor::Green, -1.f, false, 2.0f);
+	//			}
+	//		}
 
-			array.Insert(v, i+1);
-			return array;
-		}
-	}
+	//		array.Insert(v, i+1);
+	//		return array;
+	//	}
+	//}
 
 	return array;
 }

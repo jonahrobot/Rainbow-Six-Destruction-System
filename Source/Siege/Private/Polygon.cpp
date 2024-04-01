@@ -124,16 +124,10 @@ TArray<FVector2D> Polygon::find_intersection_points(Polygon other) {
 	return intersections;
 }
 
-FVector LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FRotator ActorRotation, float x) {
-
-	FVector newVector = FVector(x, LocalVector.X, LocalVector.Y);
-	return ActorRotation.RotateVector(newVector) + ActorOrigin;
-}
-
 void Polygon::draw_polygon(UWorld* world, FVector center, FRotator worldRotation, float depth, FColor color) {
 	for (Edge const x : this->edges) {
-		FVector startGlobal = LocalToGlobal(x.start, center, worldRotation, depth);
-		FVector endGlobal = LocalToGlobal(x.end, center, worldRotation, depth);
-		DrawDebugLine(world, startGlobal, endGlobal, color, true, -1.f, 0, 10.0f);
+		/*FVector startGlobal = LocalToGlobal(x.start, center, worldRotation, depth);
+		FVector endGlobal = LocalToGlobal(x.end, center, worldRotation, depth);*/
+		//DrawDebugLine(world, startGlobal, endGlobal, color, true, -1.f, 0, 10.0f);
 	}
 }
