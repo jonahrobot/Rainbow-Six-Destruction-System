@@ -30,6 +30,12 @@ public:
 
 	void Draw_Cut_Intercepts();
 
+	void Step_Through_Draw();
+	void Step_X_Up();
+	void Step_X_Down();
+	void Step_Y_Up();
+	void Step_Y_Down();
+
 	// Replicate input from user for testing
 	// Calls Cut_Wall with pre-defined shape
 	void Test_Input_Triggered();
