@@ -5,6 +5,9 @@
 #include "Wall_Cutter.h"
 #include "Kismet/GameplayStatics.h"
 
+
+#pragma region Setup
+
 TArray<FString> node_type_names {"-", "Entry", "Exit"};
 
 struct EDGE {
@@ -54,6 +57,7 @@ void UWall_Cutter::BeginPlay()
 	actorRotation = GetOwner()->GetActorRotation();
 }
 
+#pragma endregion Setup
 
 #pragma region Helper Methods
 
@@ -258,6 +262,14 @@ void UWall_Cutter::Draw_Wall_Intercepts() {
 		FVector vector = actorRotation.RotateVector(FVector(100, local.pos.X, local.pos.Y - 30));
 
 		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Green, -1.f, false, 2.0f);
+
+		if (local.type == INTERCEPT_ENTRY) {
+
+			FVector2D localTo = local.intercept_pointer->pos;
+			FVector globalTo = LocalToGlobal(localTo, actorOrigin, actorRotation, actorScale.X);
+
+			DrawDebugLine(GetWorld(), global, globalTo, FColor::MakeRandomColor(), true, -1.0f, 0, 10.0f);
+		}
 	}
 
 }
@@ -281,6 +293,14 @@ void UWall_Cutter::Draw_Cut_Intercepts() {
 		FVector vector = actorRotation.RotateVector(FVector(100, local.pos.X, local.pos.Y - 30));
 
 		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Orange, -1.f, false, 2.0f);
+
+		if (local.type == INTERCEPT_EXIT) {
+
+			FVector2D localTo = local.intercept_pointer->pos;
+			FVector globalTo = LocalToGlobal(localTo, actorOrigin, actorRotation, actorScale.X);
+
+			DrawDebugLine(GetWorld(), global, globalTo, FColor::MakeRandomColor(), true, -1.0f,0,10.0f);
+		}
 	}
 }
 
@@ -359,10 +379,7 @@ void UWall_Cutter::Step_Through_Draw() {
 
 		}
 		if(!found_intersept) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Orange, "No intercept..");
-	}
-
-
-	
+	}	
 }
 
 #pragma endregion Debug Prints
@@ -395,19 +412,22 @@ void UWall_Cutter::Cut_Wall() {
 	// Find intersections between the two polygons
 	// Then add them to the new wall_polygon and cut_polygon
 
-	TArray<POLYGON_NODE> wall_polygon_intersections = wall_polygon;
-	TArray<POLYGON_NODE> cut_polygon_intersections = cut_polygon;
+	TArray<POLYGON_NODE> wall_polygon_saved = wall_polygon;
+	TArray<POLYGON_NODE> cut_polygon_saved = cut_polygon;
 
-	for (int x = 0; x < wall_polygon.Num(); x++) {
-		for (int y = 0; y < cut_polygon.Num(); y++) {
+	int total_added_to_wall = 0;
+	int total_added_to_cut = 0;
+
+	for (int x = 0; x < wall_polygon_saved.Num(); x++) {
+		for (int y = 0; y < cut_polygon_saved.Num(); y++) {
 			// Find current edge for wall_polygon
-			FVector2D a_start = wall_polygon[x].pos;
-			FVector2D a_end = wall_polygon[(x + 1) % wall_polygon.Num()].pos;
+			FVector2D a_start = wall_polygon_saved[x].pos;
+			FVector2D a_end = wall_polygon_saved[(x + 1) % wall_polygon_saved.Num()].pos;
 			EDGE a = { a_start, a_end };
 
 			// Find current edge for cut_polygon
-			FVector2D b_start = cut_polygon[y].pos;
-			FVector2D b_end = cut_polygon[(y + 1) % cut_polygon.Num()].pos;
+			FVector2D b_start = cut_polygon_saved[y].pos;
+			FVector2D b_end = cut_polygon_saved[(y + 1) % cut_polygon_saved.Num()].pos;
 			EDGE b = { b_start, b_end };
 
 			FVector2D out;
@@ -431,25 +451,26 @@ void UWall_Cutter::Cut_Wall() {
 
 			// Create intercept link (ENTRY links in wall_polygon) (EXIT links in cut_polygon)
 
+			// Add intercept to each polygon
+
+			int indexWall = wall_polygon.Insert(add_to_wall, x + 1 + total_added_to_wall);
+			total_added_to_wall++;
+			int indexCut = cut_polygon.Insert(add_to_cut, y + 1 + total_added_to_cut);
+			total_added_to_cut++;
+
+			// Link up!
+
 			// (ENTRY links wall_polygon -> cut_polygon) 
 			if (intercept_type == INTERCEPT_ENTRY) {
-				add_to_wall.intercept_pointer = &add_to_cut;
+				wall_polygon[indexWall].intercept_pointer = &cut_polygon[indexCut];
 			}
 
 			// (EXIT links cut_polygon -> wall_polygon) 
 			if (intercept_type == INTERCEPT_EXIT) {
-				add_to_cut.intercept_pointer = &add_to_wall;
+				cut_polygon[indexCut].intercept_pointer = &wall_polygon[indexWall];
 			}
-
-			// Add intercept to each polygon
-
-			wall_polygon_intersections.Insert(add_to_wall, x + 1);
-			cut_polygon_intersections.Insert(add_to_cut, y + 1);
 		}
 	}
-
-	wall_polygon = wall_polygon_intersections;
-	cut_polygon = cut_polygon_intersections;
 
 	// At this point we have a wall_polygon and cut_polygon, with intercepts in correct order, pointed and labeled!
 }
