@@ -5,26 +5,15 @@
 #include "Wall_Cutter.h"
 #include "Kismet/GameplayStatics.h"
 
-
-enum node_type { DEFAULT, INTERCEPT_ENTRY, INTERCEPT_EXIT };
-
 TArray<FString> node_type_names {"-", "Entry", "Exit"};
-
-struct POLYGON_NODE {
-	FVector2D pos;
-	node_type type;
-
-	// Marks where W-A (Weiler-Atherton) Algorithm goes for intercepts
-	POLYGON_NODE* intercept_pointer;
-};
 
 struct EDGE {
 	FVector2D start;
 	FVector2D end;
 };
 
-TArray<POLYGON_NODE> wall_polygon;
-TArray<POLYGON_NODE> cut_polygon;
+TArray<UWall_Cutter::POLYGON_NODE> wall_polygon;
+TArray<UWall_Cutter::POLYGON_NODE> cut_polygon;
 
 
 // Sets default values for this component's properties
@@ -139,10 +128,16 @@ bool Find_Intersection(FVector2D& out, EDGE edge_a, EDGE edge_b) {
 	return true;
 }
 
+FVector LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FRotator ActorRotation, float x) {
+
+	FVector newVector = FVector(x, LocalVector.X, LocalVector.Y);
+	return ActorRotation.RotateVector(newVector) + ActorOrigin;
+}
+
 // Get intercept type, ENTER or EXIT
 // @return ENTER if intercept is entering wall_polyogn
 // @return EXIT if intercept leaving wall_polygon
-node_type get_intercept_type(FVector2D intercept_point, FVector2D next_point) {
+UWall_Cutter::node_type UWall_Cutter::get_intercept_type(FVector2D intercept_point, FVector2D next_point) {
 
 	// Follows algorithm presented below, finds it point is inside polygon
 	// https://www.youtube.com/watch?v=RSXM9bgqxJM&list=LL&index=1
@@ -152,13 +147,17 @@ node_type get_intercept_type(FVector2D intercept_point, FVector2D next_point) {
 	dir.Normalize(0.01f);
 	dir = intercept_point + dir;
 
+	FVector global = LocalToGlobal(dir, actorOrigin, actorRotation, actorScale.X);
+	DrawDebugSphere(GetWorld(), global, 25, 5, FColor::Red, true, -1.0f);
+
+
 	int overlaps = 0;
 
-	for (int x = 0; x < wall_polygon.Num(); x++) {
+	for (int x = 0; x < wall_shape.Num(); x++) {
 		
 		// Find current edge for wall_polygon
-		FVector2D a_start = wall_polygon[x].pos;
-		FVector2D a_end = wall_polygon[(x + 1) % wall_polygon.Num()].pos;
+		FVector2D a_start = wall_shape[x];
+		FVector2D a_end = wall_shape[(x + 1) % wall_shape.Num()];
 
 		float x1 = a_start.X;
 		float y1 = a_start.Y;
@@ -166,12 +165,13 @@ node_type get_intercept_type(FVector2D intercept_point, FVector2D next_point) {
 		float y2 = a_end.Y;
 
 		// This is magic idk what is going on here
-		if ((intercept_point.Y < y1) != (intercept_point.Y < y2)) {
-			if (intercept_point.X < (x1 + ((intercept_point.Y - y1) / (y2 - y1)) * (x2 - x1))) {
+		if ((dir.Y < y1) != (dir.Y < y2)) {
+			if (dir.X < (x1 + ((dir.Y - y1) / (y2 - y1)) * (x2 - x1))) {
 				overlaps += 1;
 			}
 		}
 	}
+	UE_LOG(LogTemp, Log, TEXT("OVerlaps: %d"), overlaps);
 
 	// Check if overlaps is odd number, in that case, point is inside polygon
 	// If point is inside polygon, intercept is entering
@@ -181,12 +181,6 @@ node_type get_intercept_type(FVector2D intercept_point, FVector2D next_point) {
 	
 	// Otherwise we are leaving the polygon
 	return INTERCEPT_EXIT;
-}
-
-FVector LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FRotator ActorRotation, float x) {
-
-	FVector newVector = FVector(x, LocalVector.X, LocalVector.Y);
-	return ActorRotation.RotateVector(newVector) + ActorOrigin;
 }
 
 #pragma endregion Helper Methods
@@ -338,6 +332,9 @@ void UWall_Cutter::Step_Through_Draw() {
 	FVector2D out;
 	bool found_intersept = Find_Intersection(out, a, b);
 
+	node_type intercept_type = get_intercept_type(out, b_end);
+
+
 	// Draw A line
 	FVector g_a_start = LocalToGlobal(a_start, actorOrigin, actorRotation, actorScale.X);
 	FVector g_a_end = LocalToGlobal(a_end, actorOrigin, actorRotation, actorScale.X);
@@ -348,9 +345,19 @@ void UWall_Cutter::Step_Through_Draw() {
 
 	if (GEngine) {
 		GEngine->ClearOnScreenDebugMessages();
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Orange, "X: " + FString::FromInt(step_through_x) + " Y: " + FString::FromInt(step_through_y));
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, "X: " + FString::FromInt(step_through_x) + " Y: " + FString::FromInt(step_through_y));
 
-		if(found_intersept) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Orange, "Intercept!");
+		if (found_intersept) {
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, "Intercept!");
+
+			if (intercept_type == INTERCEPT_ENTRY) {
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, "Entry!");
+			}
+			if (intercept_type == INTERCEPT_EXIT) {
+				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "EXIT!");
+			}
+
+		}
 		if(!found_intersept) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Orange, "No intercept..");
 	}
 
@@ -406,7 +413,7 @@ void UWall_Cutter::Cut_Wall() {
 			FVector2D out;
 			bool found_intersept = Find_Intersection(out, a, b);
 
-			if (!found_intersept) break;
+			if (!found_intersept) continue;
 
 			// If intercept found -
 

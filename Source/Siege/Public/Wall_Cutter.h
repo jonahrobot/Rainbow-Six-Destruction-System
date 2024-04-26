@@ -40,6 +40,16 @@ public:
 	// Calls Cut_Wall with pre-defined shape
 	void Test_Input_Triggered();
 
+	enum node_type { DEFAULT, INTERCEPT_ENTRY, INTERCEPT_EXIT };
+
+	struct POLYGON_NODE {
+		FVector2D pos;
+		node_type type;
+
+		// Marks where W-A (Weiler-Atherton) Algorithm goes for intercepts
+		POLYGON_NODE* intercept_pointer;
+	};
+
 private:
 	TArray<FVector2D> wall_shape;
 	TArray<FVector2D> cut_shape;
@@ -47,6 +57,8 @@ private:
 	FVector actorScale;
 	FVector actorOrigin;
 	FRotator actorRotation;
+
+	node_type get_intercept_type(FVector2D intercept_point, FVector2D next_point);
 
 
 
