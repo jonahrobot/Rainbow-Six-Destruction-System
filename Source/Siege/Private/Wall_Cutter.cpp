@@ -5,42 +5,10 @@
 #include "Wall_Cutter.h"
 #include "Kismet/GameplayStatics.h"
 
-// Sets default values for this component's properties
-UWall_Cutter::UWall_Cutter()
-{
-	// -- For testing purposes --
 
-	APlayerController* FirstLocalPlayer = UGameplayStatics::GetPlayerController(this, 0);
+enum node_type { DEFAULT, INTERCEPT_ENTRY, INTERCEPT_EXIT };
 
-	if (IsValid(FirstLocalPlayer) && IsValid(FirstLocalPlayer->InputComponent)) {
-
-		FirstLocalPlayer->InputComponent->BindAction(FName("Explode"), IE_Pressed, this, &UWall_Cutter::Test_Input_Triggered);
-
-	}
-	// -- For testing purposes --
-
-	// Get Wall Information
-	FVector actorScale = GetOwner()->GetActorScale() / 2 * 100;
-
-	// Create polygon size of wall surface
-	wall_shape.Add(FVector2D(actorScale.Y, actorScale.Z));
-	wall_shape.Add(FVector2D(-actorScale.Y, actorScale.Z));
-	wall_shape.Add(FVector2D(-actorScale.Y, -actorScale.Z));
-	wall_shape.Add(FVector2D(actorScale.Y, -actorScale.Z));
-}
-
-void UWall_Cutter::Test_Input_Triggered() {
-	TArray<FVector2D> cut_polygon;
-
-	cut_polygon.Add(FVector2D(-300, 0));
-	cut_polygon.Add(FVector2D(0, -300));
-	cut_polygon.Add(FVector2D(300, 0));
-	cut_polygon.Add(FVector2D(0, 300));
-
-	Cut_Wall(cut_polygon);
-}
-
-enum node_type {DEFAULT, INTERCEPT_ENTRY, INTERCEPT_EXIT};
+TArray<FString> node_type_names {"-", "Entry", "Exit"};
 
 struct POLYGON_NODE {
 	FVector2D pos;
@@ -54,6 +22,64 @@ struct EDGE {
 	FVector2D start;
 	FVector2D end;
 };
+
+TArray<POLYGON_NODE> wall_polygon;
+TArray<POLYGON_NODE> cut_polygon;
+
+
+// Sets default values for this component's properties
+UWall_Cutter::UWall_Cutter()
+{
+	PrimaryComponentTick.bCanEverTick = true;
+}
+
+// Called when the game starts
+void UWall_Cutter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// -- For testing purposes --
+
+	APlayerController* FirstLocalPlayer = UGameplayStatics::GetPlayerController(this, 0);
+
+	if (IsValid(FirstLocalPlayer) && IsValid(FirstLocalPlayer->InputComponent)) {
+
+		FirstLocalPlayer->InputComponent->BindAction(FName("Explode"), IE_Pressed, this, &UWall_Cutter::Test_Input_Triggered);
+
+
+		FirstLocalPlayer->InputComponent->BindAction(FName("Draw_Wall_Poly_Input"), IE_Pressed, this, &UWall_Cutter::Draw_Wall_Poly);
+		FirstLocalPlayer->InputComponent->BindAction(FName("Draw_Cut_Poly_Input"), IE_Pressed, this, &UWall_Cutter::Draw_Cut_Poly);
+		FirstLocalPlayer->InputComponent->BindAction(FName("Draw_Wall_Intercepts_Input"), IE_Pressed, this, &UWall_Cutter::Draw_Wall_Intercepts);
+		FirstLocalPlayer->InputComponent->BindAction(FName("Draw_Cut_Intercepts_Input"), IE_Pressed, this, &UWall_Cutter::Draw_Cut_Intercepts);
+
+	}
+
+	actorScale = GetOwner()->GetActorScale() / 2 * 100;
+	actorOrigin = GetOwner()->GetActorLocation();
+	actorRotation = GetOwner()->GetActorRotation();
+}
+
+
+#pragma region Helper Methods
+
+void UWall_Cutter::Test_Input_Triggered() {
+
+	// -- For testing purposes --
+
+	// Create polygon size of wall surface
+	wall_shape.Add(FVector2D(actorScale.Y, actorScale.Z));
+	wall_shape.Add(FVector2D(-actorScale.Y, actorScale.Z));
+	wall_shape.Add(FVector2D(-actorScale.Y, -actorScale.Z));
+	wall_shape.Add(FVector2D(actorScale.Y, -actorScale.Z));
+
+	// Create polygon that we will cut from wall
+	cut_shape.Add(FVector2D(-300, 0));
+	cut_shape.Add(FVector2D(0, -300));
+	cut_shape.Add(FVector2D(300, 0));
+	cut_shape.Add(FVector2D(0, 300));
+
+	Cut_Wall();
+}
 
 // Returns true if X is between bound_A and bound_B
 bool check_in_range(float bound_A, float bound_B, float x) {
@@ -103,14 +129,14 @@ bool Find_Intersection(FVector2D& out, EDGE edge_a, EDGE edge_b) {
 
 	// Return success!
 	out = FVector2D(x, y);
-
+	printf("Found intercept");
 	return true;
 }
 
 // Get intercept type, ENTER or EXIT
 // @return ENTER if intercept is entering wall_polyogn
 // @return EXIT if intercept leaving wall_polygon
-node_type get_intercept_type(FVector2D intercept_point, TArray<POLYGON_NODE> wall_polygon, FVector2D next_point) {
+node_type get_intercept_type(FVector2D intercept_point, FVector2D next_point) {
 
 	// Follows algorithm presented below, finds it point is inside polygon
 	// https://www.youtube.com/watch?v=RSXM9bgqxJM&list=LL&index=1
@@ -157,6 +183,93 @@ FVector LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FRotator Actor
 	return ActorRotation.RotateVector(newVector) + ActorOrigin;
 }
 
+#pragma endregion Helper Methods
+
+#pragma region Debug Prints
+
+void UWall_Cutter::Draw_Wall_Poly() {
+
+	UKismetSystemLibrary::FlushPersistentDebugLines(GetWorld());
+	UKismetSystemLibrary::FlushDebugStrings(GetWorld());
+
+	if (GEngine) {
+		GEngine->ClearOnScreenDebugMessages();
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, "Showing: Wall Polygon");	
+	}
+
+	for (FVector2D const &local : wall_shape) {
+		FVector global = LocalToGlobal(local, actorOrigin, actorRotation, actorScale.X);
+		DrawDebugSphere(GetWorld(), global, 25, 5, FColor::Blue, true, -1.0f);
+	}
+}
+
+void UWall_Cutter::Draw_Cut_Poly() {
+
+	UKismetSystemLibrary::FlushPersistentDebugLines(GetWorld());
+	UKismetSystemLibrary::FlushDebugStrings(GetWorld());
+
+	if (GEngine) {
+		GEngine->ClearOnScreenDebugMessages();
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Showing: Cut Polygon");
+	}
+
+	for (FVector2D const &local : cut_shape) {
+		FVector global = LocalToGlobal(local, actorOrigin, actorRotation, actorScale.X);
+		DrawDebugSphere(GetWorld(), global, 25, 5, FColor::Red, true, -1.0f);
+	}
+}
+
+void UWall_Cutter::Draw_Wall_Intercepts() {
+
+	// Clear Drawings
+	UKismetSystemLibrary::FlushPersistentDebugLines(GetWorld());
+	UKismetSystemLibrary::FlushDebugStrings(GetWorld());
+
+	// Show Label
+	if (GEngine) {
+		GEngine->ClearOnScreenDebugMessages();
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, "Showing: Wall + Intercepts");
+	}
+
+	// Draw Nodes
+	for (POLYGON_NODE const &local : wall_polygon) {
+
+		FVector global = LocalToGlobal(local.pos, actorOrigin, actorRotation, actorScale.X);
+		DrawDebugSphere(GetWorld(), global, 25, 3, FColor::Green, true, -1.0f);
+
+		// Draw vector type
+		FString Text = node_type_names[local.type];
+		FVector vector = actorRotation.RotateVector(FVector(100, local.pos.X, local.pos.Y - 30));
+
+		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Green, -1.f, false, 2.0f);
+	}
+
+}
+
+void UWall_Cutter::Draw_Cut_Intercepts() {
+
+	UKismetSystemLibrary::FlushPersistentDebugLines(GetWorld());
+	UKismetSystemLibrary::FlushDebugStrings(GetWorld());
+
+	if (GEngine) {
+		GEngine->ClearOnScreenDebugMessages();
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Orange, "Showing: Cut + Intercepts");
+	}
+
+	for (POLYGON_NODE const &local : cut_polygon) {
+		FVector global = LocalToGlobal(local.pos, actorOrigin, actorRotation, actorScale.X);
+		DrawDebugSphere(GetWorld(), global, 25, 3, FColor::Orange, true, -1.0f);
+
+		// Draw vector type
+		FString Text = node_type_names[local.type];
+		FVector vector = actorRotation.RotateVector(FVector(100, local.pos.X, local.pos.Y - 30));
+
+		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Orange, -1.f, false, 2.0f);
+	}
+}
+
+#pragma endregion Debug Prints
+
 /*
  *	Cut polygon from wall
  *	Updates mesh Wall_Cutter component is attached too
@@ -164,13 +277,13 @@ FVector LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FRotator Actor
  *	@cut_shape the polygon we want to cut from the wall
  *		- cut_shape vertices must be ordered clockwise
  */
-void UWall_Cutter::Cut_Wall(TArray<FVector2D> cut_shape) {
+void UWall_Cutter::Cut_Wall() {
 
-	// Follow Weiler-Atherton polygon clipping algorithm
+	// Follows Weiler-Atherton polygon clipping algorithm
 	
 	// Create polygon lists
-	TArray<POLYGON_NODE> wall_polygon;
-	TArray<POLYGON_NODE> cut_polygon;
+
+	wall_polygon.Empty(); cut_polygon.Empty();
 
 	for (FVector2D const x : wall_shape) {
 		POLYGON_NODE current = {x,DEFAULT,NULL};
@@ -183,7 +296,10 @@ void UWall_Cutter::Cut_Wall(TArray<FVector2D> cut_shape) {
 	}
 
 	// Find intersections between the two polygons
-	// Then add them to both wall_polygon and cut_polygon
+	// Then add them to the new wall_polygon and cut_polygon
+
+	TArray<POLYGON_NODE> wall_polygon_intersections = wall_polygon;
+	TArray<POLYGON_NODE> cut_polygon_intersections = cut_polygon;
 
 	for (int x = 0; x < wall_polygon.Num(); x++) {
 		for (int y = 0; y < cut_polygon.Num(); y++) {
@@ -212,7 +328,7 @@ void UWall_Cutter::Cut_Wall(TArray<FVector2D> cut_shape) {
 			add_to_cut.pos = out;
 
 			// Check if Intercept is ENTRY or EXIT
-			node_type intercept_type = get_intercept_type(out, wall_polygon, b_end);
+			node_type intercept_type = get_intercept_type(out, b_end);
 
 			add_to_wall.type = intercept_type;
 			add_to_cut.type = intercept_type;
@@ -231,66 +347,13 @@ void UWall_Cutter::Cut_Wall(TArray<FVector2D> cut_shape) {
 
 			// Add intercept to each polygon
 
-			wall_polygon.Insert(add_to_wall, x + 1);
-			cut_polygon.Insert(add_to_cut, y + 1);
+			wall_polygon_intersections.Insert(add_to_wall, x + 1);
+			cut_polygon_intersections.Insert(add_to_cut, y + 1);
 		}
 	}
+
+	wall_polygon = wall_polygon_intersections;
+	cut_polygon = cut_polygon_intersections;
 
 	// At this point we have a wall_polygon and cut_polygon, with intercepts in correct order, pointed and labeled!
-
-	FVector actorScale = GetOwner()->GetActorScale() / 2 * 100;
-	FVector actorOrigin = GetOwner()->GetActorLocation();
-	FRotator actorRotation = GetOwner()->GetActorRotation();
-
-	// Debug draw wall polygon
-	for (int x = 0; x < wall_polygon.Num(); x++) {
-
-		// Find current edge for wall_polygon
-		FVector2D a_start = wall_polygon[x].pos;
-		FVector2D a_end = wall_polygon[(x + 1) % wall_polygon.Num()].pos;
-
-		// Draw line
-		FVector startGlobal = LocalToGlobal(a_start, actorOrigin, actorRotation, actorScale.X);
-		FVector endGlobal = LocalToGlobal(a_end, actorOrigin, actorRotation, actorScale.X);
-		DrawDebugLine(GetWorld(), startGlobal, endGlobal, FColor::Blue, true, -1.f, 0, 10.0f);
-
-		// Draw vector
-		DrawDebugSphere(GetWorld(), startGlobal, 25, 5, FColor::Orange, true, -1.f);
-
-		// Label vector of the order
-		FString Text = FString::Printf(TEXT("%i"), x);
-		FVector vector = actorRotation.RotateVector(FVector(100, a_start.X - 30, a_start.Y));
-
-		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Orange, -1.f, false, 2.0f);
-
-		// Label vector type
-		Text = FString::Printf(TEXT("%i"), wall_polygon[x].type);
-		vector = actorRotation.RotateVector(FVector(100, a_start.X, a_start.Y - 30));
-
-		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Purple, -1.f, false, 2.0f);
-
-		// Draw line to its pointer
-
-		if (wall_polygon[x].intercept_pointer != NULL) {
-			startGlobal = LocalToGlobal(a_start, actorOrigin, actorRotation, actorScale.X);
-			endGlobal = LocalToGlobal(wall_polygon[x].intercept_pointer->pos, actorOrigin, actorRotation, actorScale.X);
-			DrawDebugLine(GetWorld(), startGlobal, endGlobal, FColor::Yellow, true, -1.f, 0, 10.0f);
-		}
-
-	}
-
-	// Debug draw cut polygon vectors
-	for (int x = 0; x < cut_polygon.Num(); x++) {
-
-		// Find current edge for wall_polygon
-		FVector2D a_start = cut_polygon[x].pos;
-
-		FVector startGlobal = LocalToGlobal(a_start, actorOrigin, actorRotation, actorScale.X);
-		
-		// Draw vector
-		DrawDebugSphere(GetWorld(), startGlobal, 25, 5, FColor::Red, true, -1.f);
-	}
-
-
-
 }
