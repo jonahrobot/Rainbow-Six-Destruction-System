@@ -55,6 +55,9 @@ void UWall_Cutter::BeginPlay()
 	actorScale = GetOwner()->GetActorScale() / 2 * 100;
 	actorOrigin = GetOwner()->GetActorLocation();
 	actorRotation = GetOwner()->GetActorRotation();
+
+	wall_polygon.Empty();
+	cut_polygon.Empty();
 }
 
 #pragma endregion Setup
@@ -74,7 +77,6 @@ void UWall_Cutter::Test_Input_Triggered() {
 	// Create polygon that we will cut from wall
 	cut_shape.Add(FVector2D(0, 300));
 	cut_shape.Add(FVector2D(-300, 0));
-	cut_shape.Add(FVector2D(0, -300));
 	cut_shape.Add(FVector2D(300, 0));
 
 	Cut_Wall();
@@ -251,6 +253,11 @@ void UWall_Cutter::Draw_Wall_Intercepts() {
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, "Showing: Wall + Intercepts");
 	}
 
+	if (wall_polygon.IsEmpty()) {
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("_____"));
 	// Draw Nodes
 	for (POLYGON_NODE const &local : wall_polygon) {
 
@@ -265,12 +272,20 @@ void UWall_Cutter::Draw_Wall_Intercepts() {
 
 		if (local.type == INTERCEPT_ENTRY) {
 
+			if (local.intercept_pointer == NULL) {
+				UE_LOG(LogTemp, Warning, TEXT("Intercept NULL"));
+				continue;
+			}
+
 			FVector2D localTo = local.intercept_pointer->pos;
 			FVector globalTo = LocalToGlobal(localTo, actorOrigin, actorRotation, actorScale.X);
+
+			UE_LOG(LogTemp, Warning, TEXT("Test: %s"), *localTo.ToString());
 
 			DrawDebugLine(GetWorld(), global, globalTo, FColor::MakeRandomColor(), true, -1.0f, 0, 10.0f);
 		}
 	}
+	UE_LOG(LogTemp, Warning, TEXT("_____"));
 
 }
 
@@ -284,6 +299,10 @@ void UWall_Cutter::Draw_Cut_Intercepts() {
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Orange, "Showing: Cut + Intercepts");
 	}
 
+	if (cut_polygon.IsEmpty()) {
+		return;
+	}
+
 	for (POLYGON_NODE const &local : cut_polygon) {
 		FVector global = LocalToGlobal(local.pos, actorOrigin, actorRotation, actorScale.X);
 		DrawDebugSphere(GetWorld(), global, 25, 3, FColor::Orange, true, -1.0f);
@@ -295,6 +314,11 @@ void UWall_Cutter::Draw_Cut_Intercepts() {
 		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Orange, -1.f, false, 2.0f);
 
 		if (local.type == INTERCEPT_EXIT) {
+
+			if (local.intercept_pointer == NULL) {
+				UE_LOG(LogTemp, Warning, TEXT("Intercept NULL"));
+				continue;
+			}
 
 			FVector2D localTo = local.intercept_pointer->pos;
 			FVector globalTo = LocalToGlobal(localTo, actorOrigin, actorRotation, actorScale.X);
@@ -462,12 +486,12 @@ void UWall_Cutter::Cut_Wall() {
 
 			// (ENTRY links wall_polygon -> cut_polygon) 
 			if (intercept_type == INTERCEPT_ENTRY) {
-				wall_polygon[indexWall].intercept_pointer = &cut_polygon[indexCut];
+				wall_polygon[x + total_added_to_wall].intercept_pointer = &cut_polygon[y + total_added_to_cut];
 			}
 
 			// (EXIT links cut_polygon -> wall_polygon) 
 			if (intercept_type == INTERCEPT_EXIT) {
-				cut_polygon[indexCut].intercept_pointer = &wall_polygon[indexWall];
+				cut_polygon[y + total_added_to_cut].intercept_pointer = &wall_polygon[x + total_added_to_wall];
 			}
 		}
 	}
