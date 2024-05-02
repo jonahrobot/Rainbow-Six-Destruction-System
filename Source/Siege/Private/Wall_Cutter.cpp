@@ -1,19 +1,13 @@
 // Jonah Ryan 2024 Rainbow Six Siege Explosive System
 
-
-
+#include "MathLib.h"
 #include "Wall_Cutter.h"
 #include "Kismet/GameplayStatics.h"
-
 
 #pragma region Setup
 
 TArray<FString> node_type_names {"-", "Entry", "Exit"};
 
-struct EDGE {
-	FVector2D start;
-	FVector2D end;
-};
 
 TArray<UWall_Cutter::POLYGON_NODE> wall_polygon;
 TArray<UWall_Cutter::POLYGON_NODE> cut_polygon;
@@ -68,6 +62,11 @@ void UWall_Cutter::Test_Input_Triggered() {
 
 	// -- For testing purposes --
 
+	wall_shape.Empty();
+	cut_shape.Empty();
+	wall_polygon.Empty();
+	cut_polygon.Empty();
+
 	// Create polygon size of wall surface
 	wall_shape.Add(FVector2D(actorScale.Y, actorScale.Z));
 	wall_shape.Add(FVector2D(-actorScale.Y, actorScale.Z));
@@ -80,58 +79,6 @@ void UWall_Cutter::Test_Input_Triggered() {
 	cut_shape.Add(FVector2D(300, 0));
 
 	Cut_Wall();
-}
-
-// Returns true if X is between bound_A and bound_B
-bool check_in_range(float bound_A, float bound_B, float x) {
-
-	// Find our bounds
-	float lowerBound = std::floorf(std::min(bound_A, bound_B));
-	float upperBound = std::floorf(std::max(bound_A, bound_B));
-
-	// Check if x in bounds
-	return (lowerBound <= std::floorf(x)) && (std::floorf(x) <= upperBound);
-}
-
-// Converts Edge to line represented in (ax + by = c)
-void edge_to_line_standard_form(float& a, float& b, float& c, EDGE e) {
-	a = -e.end.Y + e.start.Y;
-	b = e.end.X - e.start.X;
-	c = -(a * e.start.X + b * e.start.Y);
-}
-
-// Find Intersection between two edges
-// @return true if intersection found, passed in out
-// @return false if no intersection found
-bool Find_Intersection(FVector2D& out, EDGE edge_a, EDGE edge_b) {
-
-	float a1, b1, c1;
-	edge_to_line_standard_form(a1, b1, c1, edge_a);
-
-	float a2, b2, c2;
-	edge_to_line_standard_form(a2, b2, c2, edge_b);
-
-	float d = (a1 * b2 - a2 * b1);
-
-	// Return false, impossible to find intersection
-	if (d == 0) return false;
-
-	// Find intersection point
-	// https://www.geeksforgeeks.org/point-of-intersection-of-two-lines-formula/
-	float x = (b1 * c2 - b2 * c1) / d;
-	float y = (c1 * a2 - c2 * a1) / d;
-
-	// Check if found point is in both lines
-	if (!check_in_range(edge_a.start.X, edge_a.end.X, x)) return false;
-	if (!check_in_range(edge_a.start.Y, edge_a.end.Y, y)) return false;
-
-	if (!check_in_range(edge_b.start.X, edge_b.end.X, x)) return false;
-	if (!check_in_range(edge_b.start.Y, edge_b.end.Y, y)) return false;
-
-	// Return success!
-	out = FVector2D(x, y);
-	UE_LOG(LogTemp, Warning, TEXT("Found Intercept"));
-	return true;
 }
 
 FVector LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FRotator ActorRotation, float x) {
@@ -366,15 +313,15 @@ void UWall_Cutter::Step_Through_Draw() {
 	// Find current edge for wall_polygon
 	FVector2D a_start = wall_shape[x];
 	FVector2D a_end = wall_shape[(x + 1) % wall_shape.Num()];
-	EDGE a = { a_start, a_end };
+	MathLib::EDGE a = { a_start, a_end };
 
 	// Find current edge for cut_polygon
 	FVector2D b_start = cut_shape[y];
 	FVector2D b_end = cut_shape[(y + 1) % cut_shape.Num()];
-	EDGE b = { b_start, b_end };
+	MathLib::EDGE b = { b_start, b_end };
 
 	FVector2D out;
-	bool found_intersept = Find_Intersection(out, a, b);
+	bool found_intersept = MathLib::Find_Intersection(out, a, b);
 
 	node_type intercept_type = get_intercept_type(out, b_end);
 
@@ -447,15 +394,15 @@ void UWall_Cutter::Cut_Wall() {
 			// Find current edge for wall_polygon
 			FVector2D a_start = wall_polygon_saved[x].pos;
 			FVector2D a_end = wall_polygon_saved[(x + 1) % wall_polygon_saved.Num()].pos;
-			EDGE a = { a_start, a_end };
+			MathLib::EDGE a = { a_start, a_end };
 
 			// Find current edge for cut_polygon
 			FVector2D b_start = cut_polygon_saved[y].pos;
 			FVector2D b_end = cut_polygon_saved[(y + 1) % cut_polygon_saved.Num()].pos;
-			EDGE b = { b_start, b_end };
+			MathLib::EDGE b = { b_start, b_end };
 
 			FVector2D out;
-			bool found_intersept = Find_Intersection(out, a, b);
+			bool found_intersept = MathLib::Find_Intersection(out, a, b);
 
 			if (!found_intersept) continue;
 
