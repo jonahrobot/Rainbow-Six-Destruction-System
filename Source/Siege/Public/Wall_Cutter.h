@@ -47,7 +47,7 @@ public:
 		node_type type;
 
 		// Marks where W-A (Weiler-Atherton) Algorithm goes for intercepts
-		POLYGON_NODE* intercept_pointer;
+		int intercept_index = -1;
 	};
 
 private:
@@ -59,7 +59,7 @@ private:
 	FRotator actorRotation;
 
 	node_type get_intercept_type(FVector2D intercept_point, FVector2D next_point);
-
+	void debug_print_polygon(TArray<POLYGON_NODE> poly, TArray<POLYGON_NODE> otherPoly, FString name, node_type checkType);
 
 
 protected:

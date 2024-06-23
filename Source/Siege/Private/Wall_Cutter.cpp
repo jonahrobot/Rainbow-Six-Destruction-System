@@ -206,6 +206,10 @@ void UWall_Cutter::Draw_Wall_Intercepts() {
 
 	UE_LOG(LogTemp, Warning, TEXT("_____"));
 	// Draw Nodes
+
+	debug_print_polygon(wall_polygon, cut_polygon, "Wall Polygon", INTERCEPT_ENTRY);
+	debug_print_polygon(cut_polygon, wall_polygon, "Cut Polygon", INTERCEPT_EXIT);
+
 	for (POLYGON_NODE const &local : wall_polygon) {
 
 		FVector global = LocalToGlobal(local.pos, actorOrigin, actorRotation, actorScale.X);
@@ -219,15 +223,16 @@ void UWall_Cutter::Draw_Wall_Intercepts() {
 
 		if (local.type == INTERCEPT_ENTRY) {
 
-			if (local.intercept_pointer == NULL) {
-				UE_LOG(LogTemp, Warning, TEXT("Intercept NULL"));
+			if (local.intercept_index == -1) {
+				UE_LOG(LogTemp, Warning, TEXT("Intercept not set!"));
 				continue;
 			}
 
-			FVector2D localTo = local.intercept_pointer->pos;
+			FVector2D localTo = cut_polygon[local.intercept_index].pos;
+
 			FVector globalTo = LocalToGlobal(localTo, actorOrigin, actorRotation, actorScale.X);
 
-			UE_LOG(LogTemp, Warning, TEXT("Test: %s"), *localTo.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("Drawing: %s"), *cut_polygon[local.intercept_index].pos.ToString());
 
 			DrawDebugLine(GetWorld(), global, globalTo, FColor::MakeRandomColor(), true, -1.0f, 0, 10.0f);
 		}
@@ -260,14 +265,16 @@ void UWall_Cutter::Draw_Cut_Intercepts() {
 
 		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Orange, -1.f, false, 2.0f);
 
+		UE_LOG(LogTemp, Warning, TEXT("Point on Cut Polygon: %s"), *local.pos.ToString());
+		
 		if (local.type == INTERCEPT_EXIT) {
 
-			if (local.intercept_pointer == NULL) {
-				UE_LOG(LogTemp, Warning, TEXT("Intercept NULL"));
+			if (local.intercept_index == -1) {
+				UE_LOG(LogTemp, Warning, TEXT("Intercept not set!"));
 				continue;
 			}
 
-			FVector2D localTo = local.intercept_pointer->pos;
+			FVector2D localTo = wall_polygon[local.intercept_index].pos;
 			FVector globalTo = LocalToGlobal(localTo, actorOrigin, actorRotation, actorScale.X);
 
 			DrawDebugLine(GetWorld(), global, globalTo, FColor::MakeRandomColor(), true, -1.0f,0,10.0f);
@@ -391,6 +398,7 @@ void UWall_Cutter::Cut_Wall() {
 
 	for (int x = 0; x < wall_polygon_saved.Num(); x++) {
 		for (int y = 0; y < cut_polygon_saved.Num(); y++) {
+
 			// Find current edge for wall_polygon
 			FVector2D a_start = wall_polygon_saved[x].pos;
 			FVector2D a_end = wall_polygon_saved[(x + 1) % wall_polygon_saved.Num()].pos;
@@ -433,15 +441,57 @@ void UWall_Cutter::Cut_Wall() {
 
 			// (ENTRY links wall_polygon -> cut_polygon) 
 			if (intercept_type == INTERCEPT_ENTRY) {
-				wall_polygon[x + total_added_to_wall].intercept_pointer = &cut_polygon[y + total_added_to_cut];
+				wall_polygon[x + total_added_to_wall].intercept_index = y + total_added_to_cut;
 			}
 
 			// (EXIT links cut_polygon -> wall_polygon) 
 			if (intercept_type == INTERCEPT_EXIT) {
-				cut_polygon[y + total_added_to_cut].intercept_pointer = &wall_polygon[x + total_added_to_wall];
+				cut_polygon[y + total_added_to_cut].intercept_index = x + total_added_to_wall;
 			}
 		}
 	}
 
+	// Debug testing
+	debug_print_polygon(wall_polygon, cut_polygon,"Wall Polygon", INTERCEPT_ENTRY);
+	debug_print_polygon(cut_polygon, wall_polygon,"Cut Polygon", INTERCEPT_EXIT);
+
 	// At this point we have a wall_polygon and cut_polygon, with intercepts in correct order, pointed and labeled!
+}
+
+FString Vector2DToString(FVector2D vector) {
+
+	FString out;
+
+	out.AppendInt((int)vector.X);
+	out += ",";
+	out.AppendInt((int)vector.Y);
+
+	return out;
+
+}
+
+// Cut Polygon: [0,0]->[0,0], [0,0], [0,0]
+void UWall_Cutter::debug_print_polygon(TArray<POLYGON_NODE> poly, TArray<POLYGON_NODE> otherPoly, FString name, node_type checkType){
+
+	FString out;
+
+	out += name + ": ";
+
+	for (POLYGON_NODE const& x : poly) {
+
+		if (x.type == checkType) {
+
+			out += "[" + Vector2DToString(x.pos) + "]" + "->" + "[" + Vector2DToString(otherPoly[x.intercept_index].pos) + "]";
+		}
+		else {
+			out += "[" + Vector2DToString(x.pos) + "]";
+		}
+
+		out += ", ";
+	}
+
+	out.RemoveFromEnd(", ");
+
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *out);
+
 }
