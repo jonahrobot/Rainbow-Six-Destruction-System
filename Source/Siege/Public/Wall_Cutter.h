@@ -37,8 +37,6 @@ public:
 	};
 
 private:
-	TArray<FString> node_type_names{ "-", "Entry", "Exit" };
-
 	TArray<UWall_Cutter::POLYGON_NODE> wall_polygon;
 	TArray<UWall_Cutter::POLYGON_NODE> cut_polygon;
 

@@ -42,11 +42,17 @@ void UWall_Cutter_Test::Draw_Wall_Poly() {
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, "Showing: Wall Polygon");
 	}
 
+	FVector lastGlobal = MathLib::LocalToGlobal(cutter->wall_shape[cutter->wall_shape.Num()-1], cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+
 	for (int i = 0; i < cutter->wall_shape.Num(); i++) {
 		FVector2D local = cutter->wall_shape[i];
 
 		FVector global = MathLib::LocalToGlobal(local, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
 		DrawDebugSphere(GetWorld(), global, 25, 5, FColor::Blue, true, -1.0f);
+
+		DrawDebugLine(GetWorld(), lastGlobal, global, FColor::Red, true, -1.0f, 0, 10.0f);
+
+		lastGlobal = global;
 
 		// Draw vector type
 		FString Text = FString::FromInt(i);
@@ -66,11 +72,17 @@ void UWall_Cutter_Test::Draw_Cut_Poly() {
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Showing: Cut Polygon");
 	}
 
+	FVector lastGlobal = MathLib::LocalToGlobal(cutter->cut_shape[cutter->cut_shape.Num() - 1], cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+
 	for (int i = 0; i < cutter->cut_shape.Num(); i++) {
 		FVector2D local = cutter->cut_shape[i];
 
 		FVector global = MathLib::LocalToGlobal(local, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
 		DrawDebugSphere(GetWorld(), global, 25, 5, FColor::Red, true, -1.0f);
+
+		DrawDebugLine(GetWorld(), lastGlobal, global, FColor::Red, true, -1.0f, 0, 10.0f);
+
+		lastGlobal = global;
 
 		// Draw vector type
 		FString Text = FString::FromInt(i);
@@ -104,11 +116,13 @@ void UWall_Cutter_Test::Draw_Wall_Intercepts() {
 
 	for (UWall_Cutter::POLYGON_NODE const& local : cutter->wall_polygon) {
 
+		if (local.type == cutter->DEFAULT) continue;
+
 		FVector global = MathLib::LocalToGlobal(local.pos, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
 		DrawDebugSphere(GetWorld(), global, 25, 3, FColor::Green, true, -1.0f);
 
 		// Draw vector type
-		FString Text = cutter->node_type_names[local.type];
+		FString Text = node_type_names[local.type];
 		FVector vector = cutter->actorRotation.RotateVector(FVector(100, local.pos.X, local.pos.Y - 30));
 
 		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Green, -1.f, false, 2.0f);
@@ -148,11 +162,14 @@ void UWall_Cutter_Test::Draw_Cut_Intercepts() {
 	}
 
 	for (UWall_Cutter::POLYGON_NODE const& local : cutter->cut_polygon) {
+
+		if (local.type == cutter->DEFAULT) continue;
+
 		FVector global = MathLib::LocalToGlobal(local.pos, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
 		DrawDebugSphere(GetWorld(), global, 25, 3, FColor::Orange, true, -1.0f);
 
 		// Draw vector type
-		FString Text = cutter->node_type_names[local.type];
+		FString Text = node_type_names[local.type];
 		FVector vector = cutter->actorRotation.RotateVector(FVector(100, local.pos.X, local.pos.Y - 30));
 
 		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Orange, -1.f, false, 2.0f);
@@ -202,6 +219,10 @@ void UWall_Cutter_Test::Step_Y_Down() {
 }
 
 void UWall_Cutter_Test::Step_Through_Draw() {
+
+	if (cutter->wall_shape.IsEmpty() || cutter->cut_shape.IsEmpty()) {
+		return;
+	}
 
 	UKismetSystemLibrary::FlushPersistentDebugLines(GetWorld());
 	UKismetSystemLibrary::FlushDebugStrings(GetWorld());

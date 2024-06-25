@@ -4,11 +4,11 @@
 bool MathLib::check_in_range(float bound_A, float bound_B, float x) {
 
 	// Find our bounds
-	float lowerBound = std::floorf(std::min(bound_A, bound_B));
-	float upperBound = std::floorf(std::max(bound_A, bound_B));
+	float lowerBound = std::roundf(std::min(bound_A, bound_B));
+	float upperBound = std::roundf(std::max(bound_A, bound_B));
 
 	// Check if x in bounds
-	return (lowerBound <= std::floorf(x)) && (std::floorf(x) <= upperBound);
+	return (lowerBound <= std::roundf(x)) && (std::roundf(x) <= upperBound);
 }
 
 // Converts Edge to line represented in (ax + by = c)
@@ -40,11 +40,22 @@ bool MathLib::Find_Intersection(FVector2D& out, EDGE edge_a, EDGE edge_b) {
 	float y = (c1 * a2 - c2 * a1) / d;
 
 	// Check if found point is in both lines
-	if (!check_in_range(edge_a.start.X, edge_a.end.X, x)) return false;
-	if (!check_in_range(edge_a.start.Y, edge_a.end.Y, y)) return false;
-
-	if (!check_in_range(edge_b.start.X, edge_b.end.X, x)) return false;
-	if (!check_in_range(edge_b.start.Y, edge_b.end.Y, y)) return false;
+	if (!check_in_range(edge_a.start.X, edge_a.end.X, x)) {
+		UE_LOG(LogTemp, Warning, TEXT("Failed A: Range from %f to %f failed by %f"), edge_a.start.X, edge_a.end.X, x); 
+		return false;
+	}
+	if (!check_in_range(edge_a.start.Y, edge_a.end.Y, y)) {
+		UE_LOG(LogTemp, Warning, TEXT("Failed B: Range from %f to %f failed by %f"), edge_a.start.Y, edge_a.end.Y, y);
+		return false;
+	}
+	if (!check_in_range(edge_b.start.X, edge_b.end.X, x)) {
+		UE_LOG(LogTemp, Warning, TEXT("Failed C: Range from %f to %f failed by %f"), edge_b.start.X, edge_b.end.X, x);
+		return false;
+	}
+	if (!check_in_range(edge_b.start.Y, edge_b.end.Y, y)) {
+		UE_LOG(LogTemp, Warning, TEXT("Failed D: Range from %f to %f failed by %f"), edge_b.start.Y, edge_b.end.Y, y);
+		return false;
+	}
 
 	// Return success!
 	out = FVector2D(x, y);

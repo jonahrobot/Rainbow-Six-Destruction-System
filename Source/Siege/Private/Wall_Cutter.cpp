@@ -54,10 +54,27 @@ void UWall_Cutter::Start_Cut() {
 	wall_shape.Add(FVector2D(-actorScale.Y, -actorScale.Z));
 	wall_shape.Add(FVector2D(actorScale.Y, -actorScale.Z));
 
-	// Create polygon that we will cut from wall
-	cut_shape.Add(FVector2D(0, 300));
-	cut_shape.Add(FVector2D(-300, 0));
-	cut_shape.Add(FVector2D(300, 0));
+	// Polygon points to add
+	cut_shape = {
+		FVector2D(119,169),
+		FVector2D(13,177),
+		FVector2D(-59,176),
+		FVector2D(-43,104),
+		FVector2D(-110,113),
+		FVector2D(-180,6),
+		FVector2D(-110,-24),
+		FVector2D(-80,9),
+		FVector2D(-78,-92),
+		FVector2D(-226,-158),
+		FVector2D(-118,-192),
+		FVector2D(-39,-107),
+		FVector2D(27,-123),
+		FVector2D(68,-200),
+		FVector2D(92,-60),
+		FVector2D(193,25),
+		FVector2D(76,45), // Problem chilkd
+		FVector2D(174,82) //173 - 174 
+	};
 
 	Cut_Wall();
 }
@@ -76,7 +93,7 @@ UWall_Cutter::node_type UWall_Cutter::get_intercept_type(FVector2D intercept_poi
 	dir = intercept_point + dir;
 
 	FVector global = MathLib::LocalToGlobal(dir, actorOrigin, actorRotation, actorScale.X);
-	DrawDebugSphere(GetWorld(), global, 25, 5, FColor::Red, true, -1.0f);
+	DrawDebugSphere(GetWorld(), global, 15, 10, FColor::Orange, true, -1.0f,-1);
 
 
 	int overlaps = 0;

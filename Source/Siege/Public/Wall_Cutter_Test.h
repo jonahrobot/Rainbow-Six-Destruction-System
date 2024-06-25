@@ -16,6 +16,7 @@ public:
 	UWall_Cutter_Test();
 
 private:
+	TArray<FString> node_type_names{ "-", "Entry", "Exit" };
 	UWall_Cutter* cutter;
 
 	void Draw_Wall_Poly();
