@@ -24,7 +24,7 @@ public:
 
 	// Replicate input from user for testing
 	// Calls Cut_Wall with pre-defined shape
-	void Test_Input_Triggered();
+	void Start_Cut();
 
 	enum node_type { DEFAULT, INTERCEPT_ENTRY, INTERCEPT_EXIT };
 
@@ -50,7 +50,6 @@ private:
 	FRotator actorRotation;
 
 	node_type get_intercept_type(FVector2D intercept_point, FVector2D next_point);
-	void debug_print_polygon(TArray<POLYGON_NODE> poly, TArray<POLYGON_NODE> otherPoly, FString name, node_type checkType);
 
 
 protected:

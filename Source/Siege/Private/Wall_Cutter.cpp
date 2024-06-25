@@ -23,7 +23,7 @@ void UWall_Cutter::BeginPlay()
 
 	if (IsValid(FirstLocalPlayer) && IsValid(FirstLocalPlayer->InputComponent)) {
 
-		FirstLocalPlayer->InputComponent->BindAction(FName("Explode"), IE_Pressed, this, &UWall_Cutter::Test_Input_Triggered);
+		FirstLocalPlayer->InputComponent->BindAction(FName("Explode"), IE_Pressed, this, &UWall_Cutter::Start_Cut);
 
 	}
 
@@ -39,7 +39,7 @@ void UWall_Cutter::BeginPlay()
 
 #pragma region Helper Methods
 
-void UWall_Cutter::Test_Input_Triggered() {
+void UWall_Cutter::Start_Cut() {
 
 	// -- For testing purposes --
 
@@ -202,47 +202,5 @@ void UWall_Cutter::Cut_Wall() {
 		}
 	}
 
-	// Debug testing
-	debug_print_polygon(wall_polygon, cut_polygon,"Wall Polygon", INTERCEPT_ENTRY);
-	debug_print_polygon(cut_polygon, wall_polygon,"Cut Polygon", INTERCEPT_EXIT);
-
 	// At this point we have a wall_polygon and cut_polygon, with intercepts in correct order, pointed and labeled!
-}
-
-FString Vector2DToString(FVector2D vector) {
-
-	FString out;
-
-	out.AppendInt((int)vector.X);
-	out += ",";
-	out.AppendInt((int)vector.Y);
-
-	return out;
-
-}
-
-// Cut Polygon: [0,0]->[0,0], [0,0], [0,0]
-void UWall_Cutter::debug_print_polygon(TArray<POLYGON_NODE> poly, TArray<POLYGON_NODE> otherPoly, FString name, node_type checkType){
-
-	FString out;
-
-	out += name + ": ";
-
-	for (POLYGON_NODE const& x : poly) {
-
-		if (x.type == checkType) {
-
-			out += "[" + Vector2DToString(x.pos) + "]" + "->" + "[" + Vector2DToString(otherPoly[x.intercept_index].pos) + "]";
-		}
-		else {
-			out += "[" + Vector2DToString(x.pos) + "]";
-		}
-
-		out += ", ";
-	}
-
-	out.RemoveFromEnd(", ");
-
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *out);
-
 }
