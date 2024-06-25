@@ -16,4 +16,5 @@ private:
 
 public:
 	bool static Find_Intersection(FVector2D& out, EDGE edge_a, EDGE edge_b);
+	FVector static LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FRotator ActorRotation, float x);
 };

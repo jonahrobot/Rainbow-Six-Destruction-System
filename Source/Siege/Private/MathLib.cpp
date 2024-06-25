@@ -51,3 +51,9 @@ bool MathLib::Find_Intersection(FVector2D& out, EDGE edge_a, EDGE edge_b) {
 	UE_LOG(LogTemp, Warning, TEXT("Found Intercept"));
 	return true;
 }
+
+FVector MathLib::LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FRotator ActorRotation, float x) {
+
+	FVector newVector = FVector(x, LocalVector.X, LocalVector.Y);
+	return ActorRotation.RotateVector(newVector) + ActorOrigin;
+}

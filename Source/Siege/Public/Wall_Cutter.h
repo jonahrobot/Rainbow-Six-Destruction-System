@@ -22,20 +22,6 @@ public:
 	 */
 	void Cut_Wall();
 
-	void Draw_Wall_Poly();
-
-	void Draw_Cut_Poly();
-
-	void Draw_Wall_Intercepts();
-
-	void Draw_Cut_Intercepts();
-
-	void Step_Through_Draw();
-	void Step_X_Up();
-	void Step_X_Down();
-	void Step_Y_Up();
-	void Step_Y_Down();
-
 	// Replicate input from user for testing
 	// Calls Cut_Wall with pre-defined shape
 	void Test_Input_Triggered();
@@ -51,6 +37,11 @@ public:
 	};
 
 private:
+	TArray<FString> node_type_names{ "-", "Entry", "Exit" };
+
+	TArray<UWall_Cutter::POLYGON_NODE> wall_polygon;
+	TArray<UWall_Cutter::POLYGON_NODE> cut_polygon;
+
 	TArray<FVector2D> wall_shape;
 	TArray<FVector2D> cut_shape;
 
@@ -67,5 +58,5 @@ protected:
 
 
 public:	
-		
+	friend class UWall_Cutter_Test;
 };
