@@ -28,6 +28,7 @@ private:
 	void Draw_Cut_Intercepts();
 
 	void Step_Through_Draw();
+	void Draw_Shrapnel();
 	void Step_X_Up();
 	void Step_X_Down();
 	void Step_Y_Up();

@@ -31,14 +31,29 @@ public:
 	struct POLYGON_NODE {
 		FVector2D pos;
 		node_type type;
+		bool visited = false;
 
 		// Marks where W-A (Weiler-Atherton) Algorithm goes for intercepts
 		int intercept_index = -1;
+
+		bool equals(const POLYGON_NODE& other)
+		{
+			return (pos == other.pos && type == other.type);
+		}
+
+		bool operator==(const POLYGON_NODE& other) const
+		{
+			return (pos == other.pos && type == other.type);
+		}
 	};
 
+	typedef TArray<UWall_Cutter::POLYGON_NODE> Polygon;
+
+
 private:
-	TArray<UWall_Cutter::POLYGON_NODE> wall_polygon;
-	TArray<UWall_Cutter::POLYGON_NODE> cut_polygon;
+	Polygon wall_polygon;
+	Polygon cut_polygon;
+	TArray<Polygon> regions;
 
 	TArray<FVector2D> wall_shape;
 	TArray<FVector2D> cut_shape;
@@ -46,6 +61,10 @@ private:
 	FVector actorScale;
 	FVector actorOrigin;
 	FRotator actorRotation;
+
+	Polygon walk_loop(TArray<POLYGON_NODE>& OUT_visited, POLYGON_NODE start, int indexOfVertex);
+
+	POLYGON_NODE get_next_node(int& OUT_new_index, int currentIndex, bool in_cut_polygon);
 
 	node_type get_intercept_type(FVector2D intercept_point, FVector2D next_point);
 

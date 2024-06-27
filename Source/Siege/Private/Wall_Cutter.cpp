@@ -140,13 +140,13 @@ UWall_Cutter::node_type UWall_Cutter::get_intercept_type(FVector2D intercept_poi
 void UWall_Cutter::Cut_Wall() {
 
 	// Follows Weiler-Atherton polygon clipping algorithm
-	
+
 	// Create polygon lists
 
 	wall_polygon.Empty(); cut_polygon.Empty();
 
 	for (FVector2D const x : wall_shape) {
-		POLYGON_NODE current = {x,DEFAULT,NULL};
+		POLYGON_NODE current = { x,DEFAULT,NULL };
 		wall_polygon.Add(current);
 	}
 
@@ -158,8 +158,8 @@ void UWall_Cutter::Cut_Wall() {
 	// Find intersections between the two polygons
 	// Then add them to the new wall_polygon and cut_polygon
 
-	TArray<POLYGON_NODE> wall_polygon_saved = wall_polygon;
-	TArray<POLYGON_NODE> cut_polygon_saved = cut_polygon;
+	Polygon wall_polygon_saved = wall_polygon;
+	Polygon cut_polygon_saved = cut_polygon;
 
 	int total_added_to_wall = 0;
 	int total_added_to_cut = 0;
@@ -220,4 +220,88 @@ void UWall_Cutter::Cut_Wall() {
 	}
 
 	// At this point we have a wall_polygon and cut_polygon, with intercepts in correct order, pointed and labeled!
+
+	// Find our resulting destruction piece polygons
+
+	regions.Empty();
+	TArray<POLYGON_NODE> visited;
+
+	for (int i = 0; i < cut_polygon.Num(); i++) {
+		POLYGON_NODE x = cut_polygon[i];
+
+		if (visited.Contains(x) == false && x.type == INTERCEPT_ENTRY) {
+			
+			Polygon new_region = walk_loop(visited,x,i);
+
+			regions.Add(new_region);
+		}
+	}
+
+
+}
+
+UWall_Cutter::Polygon UWall_Cutter::walk_loop(TArray<POLYGON_NODE> &OUT_visited, POLYGON_NODE start, int indexOfVertex) {
+
+	Polygon loop;
+	loop.Add(start);
+	OUT_visited.Add(start);
+
+	int currentIndex = indexOfVertex;
+	bool in_cut_polygon = true;
+	POLYGON_NODE x = get_next_node(currentIndex, currentIndex, true);
+
+	while (x.equals(start) == false){
+		loop.Add(x);
+
+		if (OUT_visited.Contains(x) && (x.type == INTERCEPT_ENTRY || x.type == INTERCEPT_EXIT)) {
+			UE_LOG(LogTemp, Error, TEXT("Infinite loop found when walking loop!"));
+		}
+
+		OUT_visited.Add(x);
+
+		if (x.intercept_index != -1 && (x.type == INTERCEPT_ENTRY || x.type == INTERCEPT_EXIT)) {
+
+			currentIndex = x.intercept_index;
+
+			if (in_cut_polygon) {
+				x = wall_polygon[currentIndex];
+			}
+			else {
+				x = cut_polygon[currentIndex];
+			}
+
+			in_cut_polygon = !in_cut_polygon;
+		}
+
+		x = get_next_node(currentIndex, currentIndex, in_cut_polygon);
+	}
+
+	return loop;
+}
+
+UWall_Cutter::POLYGON_NODE UWall_Cutter::get_next_node(int& OUT_new_index, int currentIndex, bool in_cut_polygon) {
+
+	if (in_cut_polygon) {
+
+		if (cut_polygon.IsValidIndex(currentIndex + 1)) {
+			OUT_new_index = currentIndex + 1;
+			return cut_polygon[currentIndex + 1];
+		}
+		else {
+			OUT_new_index = 0;
+			return cut_polygon[0];
+		}
+	}
+	else {
+
+		if (wall_polygon.IsValidIndex(currentIndex + 1)) {
+			OUT_new_index = currentIndex + 1;
+			return wall_polygon[currentIndex + 1];
+		}
+		else {
+			OUT_new_index = 0;
+			return wall_polygon[0];
+		}
+	}
+
 }

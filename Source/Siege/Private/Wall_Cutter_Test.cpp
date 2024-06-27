@@ -22,7 +22,7 @@ void UWall_Cutter_Test::BeginPlay()
 		FirstLocalPlayer->InputComponent->BindAction(FName("Draw_Wall_Poly_Input"), IE_Pressed, this, &UWall_Cutter_Test::Draw_Wall_Poly);
 		FirstLocalPlayer->InputComponent->BindAction(FName("Draw_Cut_Poly_Input"), IE_Pressed, this, &UWall_Cutter_Test::Draw_Cut_Poly);
 		FirstLocalPlayer->InputComponent->BindAction(FName("Draw_Wall_Intercepts_Input"), IE_Pressed, this, &UWall_Cutter_Test::Draw_Wall_Intercepts);
-		FirstLocalPlayer->InputComponent->BindAction(FName("Draw_Cut_Intercepts_Input"), IE_Pressed, this, &UWall_Cutter_Test::Draw_Cut_Intercepts);
+		FirstLocalPlayer->InputComponent->BindAction(FName("Draw_Cut_Intercepts_Input"), IE_Pressed, this, &UWall_Cutter_Test::Draw_Shrapnel);
 
 		FirstLocalPlayer->InputComponent->BindAction(FName("x_up"), IE_Pressed, this, &UWall_Cutter_Test::Step_X_Up);
 		FirstLocalPlayer->InputComponent->BindAction(FName("y_up"), IE_Pressed, this, &UWall_Cutter_Test::Step_Y_Up);
@@ -116,7 +116,7 @@ void UWall_Cutter_Test::Draw_Wall_Intercepts() {
 
 	for (UWall_Cutter::POLYGON_NODE const& local : cutter->wall_polygon) {
 
-		if (local.type == cutter->DEFAULT) continue;
+		//if (local.type == cutter->DEFAULT) continue;
 
 		FVector global = MathLib::LocalToGlobal(local.pos, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
 		DrawDebugSphere(GetWorld(), global, 25, 3, FColor::Green, true, -1.0f);
@@ -187,6 +187,41 @@ void UWall_Cutter_Test::Draw_Cut_Intercepts() {
 			FVector globalTo = MathLib::LocalToGlobal(localTo, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
 
 			DrawDebugLine(GetWorld(), global, globalTo, FColor::MakeRandomColor(), true, -1.0f, 0, 10.0f);
+		}
+	}
+}
+
+void UWall_Cutter_Test::Draw_Shrapnel() {
+	
+	UKismetSystemLibrary::FlushPersistentDebugLines(GetWorld());
+	UKismetSystemLibrary::FlushDebugStrings(GetWorld());
+
+	if (GEngine) {
+		GEngine->ClearOnScreenDebugMessages();
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Showing: Shrapnel Polygon");
+	}
+
+	for (UWall_Cutter::Polygon const& shrapnel_polgyon : cutter->regions) {
+
+		FVector lastGlobal = MathLib::LocalToGlobal(shrapnel_polgyon[shrapnel_polgyon.Num() - 1].pos, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+
+		int index = 0;
+
+		for (UWall_Cutter::POLYGON_NODE const& current_node : shrapnel_polgyon) {
+			FVector2D local = current_node.pos;
+
+			FVector global = MathLib::LocalToGlobal(local, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+			DrawDebugSphere(GetWorld(), global, 25, 5, FColor::Black, true, -1.0f);
+
+			DrawDebugLine(GetWorld(), lastGlobal, global, FColor::Black, true, -1.0f, 0, 10.0f);
+
+			lastGlobal = global;
+					// Draw vector type
+			FString Text = FString::FromInt(index);
+			FVector vector = cutter->actorRotation.RotateVector(FVector(100, local.X, local.Y - 30));
+
+			DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Red, -1.f, false, 2.0f);
+			index += 1;
 		}
 	}
 }
@@ -287,7 +322,7 @@ FString Vector2DToString(FVector2D vector) {
 }
 
 // Cut Polygon: [0,0]->[0,0], [0,0], [0,0]
-void UWall_Cutter_Test::debug_print_polygon(TArray<UWall_Cutter::POLYGON_NODE> poly, TArray<UWall_Cutter::POLYGON_NODE> otherPoly, FString name, UWall_Cutter::node_type checkType) {
+void UWall_Cutter_Test::debug_print_polygon(UWall_Cutter::Polygon poly, UWall_Cutter::Polygon otherPoly, FString name, UWall_Cutter::node_type checkType) {
 
 	FString out;
 
