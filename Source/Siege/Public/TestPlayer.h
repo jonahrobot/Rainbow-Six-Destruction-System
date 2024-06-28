@@ -31,9 +31,14 @@ protected:
 	UPROPERTY(EditAnywhere)
 	class UCameraComponent* Camera;
 
+	UCharacterMovementComponent* CharacterMovement;
+
 	void MoveForward(float input);
 	void MoveRight(float input);
 	void TurnCamera(float input);
 	void LookUp(float input);
+	void StartSprint();
+	void StopSprint();
 
+	float DefaultSpeed;
 };

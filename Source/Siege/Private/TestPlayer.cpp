@@ -3,6 +3,7 @@
 
 #include "TestPlayer.h"
 #include "Camera/CameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 ATestPlayer::ATestPlayer()
@@ -18,6 +19,8 @@ ATestPlayer::ATestPlayer()
 
 	Camera->bUsePawnControlRotation = true;
 
+    CharacterMovement = GetCharacterMovement();
+	DefaultSpeed = CharacterMovement->MaxWalkSpeed;
 }
 
 // Called when the game starts or when spawned
@@ -51,6 +54,16 @@ void ATestPlayer::LookUp(float input) {
 	AddControllerPitchInput(input);
 }
 
+void ATestPlayer::StartSprint() {
+	CharacterMovement->MaxWalkSpeed = DefaultSpeed * 4;
+}
+
+
+void ATestPlayer::StopSprint() {
+	CharacterMovement->MaxWalkSpeed = DefaultSpeed;
+}
+
+
 // Called to bind functionality to input
 void ATestPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -61,5 +74,7 @@ void ATestPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis(FName("MoveRight"), this, &ATestPlayer::MoveRight);
 	PlayerInputComponent->BindAxis(FName("TurnCamera"), this, &ATestPlayer::TurnCamera);
 	PlayerInputComponent->BindAxis(FName("LookUp"), this, &ATestPlayer::LookUp);
+	PlayerInputComponent->BindAction(FName("Sprint"), IE_Pressed, this, &ATestPlayer::StartSprint);
+	PlayerInputComponent->BindAction(FName("Sprint"), IE_Released, this, &ATestPlayer::StopSprint);
 }
 
