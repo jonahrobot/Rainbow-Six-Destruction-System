@@ -39,7 +39,7 @@ void UWall_Cutter::BeginPlay()
 
 #pragma region Helper Methods
 
-void UWall_Cutter::Add_Cut_Point(FVector2D PointToAdd) {
+void UWall_Cutter::Add_Cut_Point(FVector2D const& PointToAdd) {
 	cut_shape.Add(PointToAdd);
 
 }
@@ -79,7 +79,7 @@ void UWall_Cutter::Start_Cut() {
 // Get intercept type, ENTER or EXIT
 // @return ENTER if intercept is entering wall_polyogn
 // @return EXIT if intercept leaving wall_polygon
-UWall_Cutter::node_type UWall_Cutter::get_intercept_type(FVector2D intercept_point, FVector2D next_point) {
+UWall_Cutter::node_type UWall_Cutter::get_intercept_type(FVector2D const& intercept_point, FVector2D const& next_point) {
 
 	// Follows algorithm presented below, finds it point is inside polygon
 	// https://www.youtube.com/watch?v=RSXM9bgqxJM&list=LL&index=1
@@ -237,7 +237,7 @@ void UWall_Cutter::Cut_Wall() {
 
 }
 
-UWall_Cutter::Polygon UWall_Cutter::walk_loop(TArray<POLYGON_NODE> &OUT_visited, POLYGON_NODE start, int indexOfVertex) {
+UWall_Cutter::Polygon UWall_Cutter::walk_loop(TArray<POLYGON_NODE> &OUT_visited, POLYGON_NODE const&  start, int indexOfVertex) {
 
 	Polygon loop;
 	loop.Add(start);

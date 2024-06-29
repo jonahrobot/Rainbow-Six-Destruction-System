@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Wall_Cutter.h"
 #include "TestPlayer.generated.h"
 
 UCLASS()
@@ -25,6 +26,9 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UPROPERTY(EditAnywhere)
+	float rayLength = 10000;
 	
 protected:
 
@@ -40,6 +44,14 @@ protected:
 	void StartSprint();
 	void StopSprint();
 	void SendCutPoint();
+	void StartLaserCut();
+	void StopLaserCut();
 
 	float DefaultSpeed;
+	FHitResult hit;
+	FCollisionQueryParams collisionParams;
+	UWall_Cutter* currentTarget;
+
+private:
+	bool laserCutting = false;
 };

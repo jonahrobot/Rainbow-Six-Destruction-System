@@ -26,7 +26,7 @@ public:
 	// Calls Cut_Wall with pre-defined shape
 	void Start_Cut();
 
-	void Add_Cut_Point(FVector2D PointToAdd);
+	void Add_Cut_Point(FVector2D const& PointToAdd);
 
 	enum node_type { DEFAULT, INTERCEPT_ENTRY, INTERCEPT_EXIT };
 
@@ -64,11 +64,11 @@ private:
 	FVector actorOrigin;
 	FRotator actorRotation;
 
-	Polygon walk_loop(TArray<POLYGON_NODE>& OUT_visited, POLYGON_NODE start, int indexOfVertex);
+	Polygon walk_loop(TArray<POLYGON_NODE>& OUT_visited, POLYGON_NODE const& start, int indexOfVertex);
 
 	POLYGON_NODE get_next_node(int& OUT_new_index, int currentIndex, bool in_cut_polygon);
 
-	node_type get_intercept_type(FVector2D intercept_point, FVector2D next_point);
+	node_type get_intercept_type(FVector2D const& intercept_point, FVector2D const& next_point);
 
 
 protected:

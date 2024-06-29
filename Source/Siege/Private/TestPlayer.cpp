@@ -18,10 +18,16 @@ ATestPlayer::ATestPlayer()
 	// Attach Camera
 	Camera->SetupAttachment(RootComponent);
 
+	// Enable camera rotation
 	Camera->bUsePawnControlRotation = true;
 
+	// Link Character Movement
     CharacterMovement = GetCharacterMovement();
 	DefaultSpeed = CharacterMovement->MaxWalkSpeed;
+
+	// Setup Raycast Params
+	collisionParams = FCollisionQueryParams();
+	collisionParams.AddIgnoredActor(this);
 }
 
 // Called when the game starts or when spawned
@@ -35,6 +41,10 @@ void ATestPlayer::BeginPlay()
 void ATestPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (laserCutting) {
+		SendCutPoint();
+	}
 
 }
 
@@ -63,38 +73,40 @@ void ATestPlayer::StopSprint() {
 	CharacterMovement->MaxWalkSpeed = DefaultSpeed;
 }
 
+void ATestPlayer::StartLaserCut() {
+	laserCutting = true; 
+}
+
+void ATestPlayer::StopLaserCut() {
+	laserCutting = false;
+}
+
 void ATestPlayer::SendCutPoint() {
 
-	FVector start = GetActorLocation();
-	FVector forward = Camera->GetForwardVector();
-	start = FVector(start.X + (forward.X * 100), start.Y + (forward.Y * 100), start.Z + (forward.Z * 100));
+	FVector rayStart = GetActorLocation() + Camera->GetRelativeLocation();
+	FVector rayEnd = rayStart + (Camera->GetForwardVector() * rayLength);
 
-	FVector end = start + (forward * 1000); // Raycast length 1000;
-	FHitResult hit;
+	if (GetWorld() == false) return;
 
-	if (GetWorld()) {
-		bool actorHit = GetWorld()->LineTraceSingleByChannel(hit, start, end, ECC_WorldStatic, FCollisionQueryParams(), FCollisionResponseParams());
-		DrawDebugLine(GetWorld(), start, end, FColor::Red, true, 2.f, 0.f, 10.f);
-		if (actorHit && hit.GetActor()) {
-			
-			UWall_Cutter* MyComponent = hit.GetActor()->FindComponentByClass<UWall_Cutter>();
+	bool actorHit = GetWorld()->LineTraceSingleByChannel(hit, rayStart, rayEnd, ECC_WorldStatic, collisionParams, FCollisionResponseParams());
 
-			if (MyComponent != nullptr)
-			{
-				FVector hitPoint = hit.ImpactPoint;
+	if (actorHit && hit.GetActor()) {
 
-				FRotator3d reverseRotation = hit.GetActor()->GetActorRotation().GetInverse();
-
-				FVector relativePoint = reverseRotation.RotateVector(hitPoint - hit.GetActor()->GetActorLocation());
-				
-				MyComponent->Add_Cut_Point(FVector2D(relativePoint.Y, relativePoint.Z));
-
-				DrawDebugSphere(GetWorld(), hit.ImpactPoint, 4.0f, 5, FColor::Blue, true, 2.f, 0.f, 10.f);
-				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, hit.GetActor()->GetFName().ToString());
-			}
-		}
+		currentTarget = hit.GetActor()->FindComponentByClass<UWall_Cutter>();
 	}
 
+	if (currentTarget == nullptr || actorHit == false) return;
+
+	FVector hitPoint = hit.ImpactPoint;
+
+	FRotator3d reverseRotation = hit.GetActor()->GetActorRotation().GetInverse();
+
+	FVector relativePoint = reverseRotation.RotateVector(hitPoint - hit.GetActor()->GetActorLocation());
+				
+	currentTarget->Add_Cut_Point(FVector2D(relativePoint.Y, relativePoint.Z));
+
+	DrawDebugSphere(GetWorld(), hit.ImpactPoint, 4.0f, 5, FColor::Blue, true, 2.f, 0.f, 10.f);
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, hit.GetActor()->GetFName().ToString());
 }
 
 
@@ -110,6 +122,7 @@ void ATestPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis(FName("LookUp"), this, &ATestPlayer::LookUp);
 	PlayerInputComponent->BindAction(FName("Sprint"), IE_Pressed, this, &ATestPlayer::StartSprint);
 	PlayerInputComponent->BindAction(FName("Sprint"), IE_Released, this, &ATestPlayer::StopSprint);
-	PlayerInputComponent->BindAction(FName("Fire"), IE_Pressed, this, &ATestPlayer::SendCutPoint);
+	PlayerInputComponent->BindAction(FName("Fire"), IE_Pressed, this, &ATestPlayer::StartLaserCut);
+	PlayerInputComponent->BindAction(FName("Fire"), IE_Released, this, &ATestPlayer::StopLaserCut);
 }
 

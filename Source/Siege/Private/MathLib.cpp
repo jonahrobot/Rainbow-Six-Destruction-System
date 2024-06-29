@@ -63,7 +63,7 @@ bool MathLib::Find_Intersection(FVector2D& out, EDGE edge_a, EDGE edge_b) {
 	return true;
 }
 
-FVector MathLib::LocalToGlobal(FVector2D LocalVector, FVector ActorOrigin, FRotator ActorRotation, float x) {
+FVector MathLib::LocalToGlobal(FVector2D const& LocalVector, FVector const& ActorOrigin, FRotator const& ActorRotation, float x) {
 
 	FVector newVector = FVector(x, LocalVector.X, LocalVector.Y);
 	return ActorRotation.RotateVector(newVector) + ActorOrigin;

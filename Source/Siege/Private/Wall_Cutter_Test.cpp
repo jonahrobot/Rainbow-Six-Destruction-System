@@ -6,8 +6,7 @@
 
 UWall_Cutter_Test::UWall_Cutter_Test()
 {
-	//PrimaryComponentTick.bCanEverTick = true;
-	//PrimaryComponentTick.bStartWithTickEnabled = true;
+
 }
 
 void UWall_Cutter_Test::BeginPlay()
@@ -32,13 +31,6 @@ void UWall_Cutter_Test::BeginPlay()
 
 	}
 }
-
-//void UWall_Cutter_Test::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-//{
-//	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-//	Draw_Cut_Poly();
-//}
-
 
 void UWall_Cutter_Test::Draw_Wall_Poly() {
 
