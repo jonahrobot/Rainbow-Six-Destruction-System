@@ -39,6 +39,11 @@ void UWall_Cutter::BeginPlay()
 
 #pragma region Helper Methods
 
+void UWall_Cutter::Add_Cut_Point(FVector2D PointToAdd) {
+	cut_shape.Add(PointToAdd);
+
+}
+
 void UWall_Cutter::Start_Cut() {
 
 	// -- For testing purposes --
@@ -56,16 +61,16 @@ void UWall_Cutter::Start_Cut() {
 
 	// Polygon points to add
 	cut_shape = {
-		FVector2D(119,169),
-		FVector2D(13,177),
-		FVector2D(-200,176),
-		FVector2D(-39,-600),
-		FVector2D(27,-123),
-		FVector2D(400,-200),
-		FVector2D(92,-60),
-		FVector2D(193,25),
-		FVector2D(76,45), // Problem chilkd
-		FVector2D(174,82) //173 - 174 
+		//FVector2D(119,169),
+		//FVector2D(13,177),
+		//FVector2D(-200,176),
+		//FVector2D(-39,-600),
+		//FVector2D(27,-123),
+		//FVector2D(400,-200),
+		//FVector2D(92,-60),
+		//FVector2D(193,25),
+		//FVector2D(76,45), // Problem chilkd
+		//FVector2D(174,82) //173 - 174 
 	};
 
 	Cut_Wall();

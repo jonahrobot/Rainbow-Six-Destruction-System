@@ -12,7 +12,7 @@ class SIEGE_API UWall_Cutter_Test : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:
 	UWall_Cutter_Test();
 
 private:
@@ -40,5 +40,6 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
+	//virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	
 };

@@ -4,6 +4,7 @@
 #include "TestPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Wall_Cutter.h"
 
 // Sets default values
 ATestPlayer::ATestPlayer()
@@ -58,9 +59,42 @@ void ATestPlayer::StartSprint() {
 	CharacterMovement->MaxWalkSpeed = DefaultSpeed * 4;
 }
 
-
 void ATestPlayer::StopSprint() {
 	CharacterMovement->MaxWalkSpeed = DefaultSpeed;
+}
+
+void ATestPlayer::SendCutPoint() {
+
+	FVector start = GetActorLocation();
+	FVector forward = Camera->GetForwardVector();
+	start = FVector(start.X + (forward.X * 100), start.Y + (forward.Y * 100), start.Z + (forward.Z * 100));
+
+	FVector end = start + (forward * 1000); // Raycast length 1000;
+	FHitResult hit;
+
+	if (GetWorld()) {
+		bool actorHit = GetWorld()->LineTraceSingleByChannel(hit, start, end, ECC_WorldStatic, FCollisionQueryParams(), FCollisionResponseParams());
+		DrawDebugLine(GetWorld(), start, end, FColor::Red, true, 2.f, 0.f, 10.f);
+		if (actorHit && hit.GetActor()) {
+			
+			UWall_Cutter* MyComponent = hit.GetActor()->FindComponentByClass<UWall_Cutter>();
+
+			if (MyComponent != nullptr)
+			{
+				FVector hitPoint = hit.ImpactPoint;
+
+				FRotator3d reverseRotation = hit.GetActor()->GetActorRotation().GetInverse();
+
+				FVector relativePoint = reverseRotation.RotateVector(hitPoint - hit.GetActor()->GetActorLocation());
+				
+				MyComponent->Add_Cut_Point(FVector2D(relativePoint.Y, relativePoint.Z));
+
+				DrawDebugSphere(GetWorld(), hit.ImpactPoint, 4.0f, 5, FColor::Blue, true, 2.f, 0.f, 10.f);
+				GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, hit.GetActor()->GetFName().ToString());
+			}
+		}
+	}
+
 }
 
 
@@ -76,5 +110,6 @@ void ATestPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis(FName("LookUp"), this, &ATestPlayer::LookUp);
 	PlayerInputComponent->BindAction(FName("Sprint"), IE_Pressed, this, &ATestPlayer::StartSprint);
 	PlayerInputComponent->BindAction(FName("Sprint"), IE_Released, this, &ATestPlayer::StopSprint);
+	PlayerInputComponent->BindAction(FName("Fire"), IE_Pressed, this, &ATestPlayer::SendCutPoint);
 }
 

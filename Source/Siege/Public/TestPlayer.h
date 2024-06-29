@@ -39,6 +39,7 @@ protected:
 	void LookUp(float input);
 	void StartSprint();
 	void StopSprint();
+	void SendCutPoint();
 
 	float DefaultSpeed;
 };

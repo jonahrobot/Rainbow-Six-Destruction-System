@@ -6,7 +6,8 @@
 
 UWall_Cutter_Test::UWall_Cutter_Test()
 {
-	PrimaryComponentTick.bCanEverTick = true;
+	//PrimaryComponentTick.bCanEverTick = true;
+	//PrimaryComponentTick.bStartWithTickEnabled = true;
 }
 
 void UWall_Cutter_Test::BeginPlay()
@@ -31,6 +32,13 @@ void UWall_Cutter_Test::BeginPlay()
 
 	}
 }
+
+//void UWall_Cutter_Test::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+//{
+//	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+//	Draw_Cut_Poly();
+//}
+
 
 void UWall_Cutter_Test::Draw_Wall_Poly() {
 
@@ -71,6 +79,11 @@ void UWall_Cutter_Test::Draw_Cut_Poly() {
 		GEngine->ClearOnScreenDebugMessages();
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Showing: Cut Polygon");
 	}
+
+	if (cutter->cut_shape.Num() == 0) {
+		return;
+	}
+
 
 	FVector lastGlobal = MathLib::LocalToGlobal(cutter->cut_shape[cutter->cut_shape.Num() - 1], cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
 

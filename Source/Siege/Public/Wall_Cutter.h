@@ -26,6 +26,8 @@ public:
 	// Calls Cut_Wall with pre-defined shape
 	void Start_Cut();
 
+	void Add_Cut_Point(FVector2D PointToAdd);
+
 	enum node_type { DEFAULT, INTERCEPT_ENTRY, INTERCEPT_EXIT };
 
 	struct POLYGON_NODE {
