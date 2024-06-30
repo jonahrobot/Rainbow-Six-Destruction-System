@@ -68,3 +68,11 @@ FVector MathLib::LocalToGlobal(FVector2D const& LocalVector, FVector const& Acto
 	FVector newVector = FVector(x, LocalVector.X, LocalVector.Y);
 	return ActorRotation.RotateVector(newVector) + ActorOrigin;
 }
+
+FVector2D MathLib::GlobalToLocal(FVector worldPoint, AActor* referenceActor) {
+	FRotator3d reverseRotation = referenceActor->GetActorRotation().GetInverse();
+
+	FVector relativePoint = reverseRotation.RotateVector(worldPoint - referenceActor->GetActorLocation());
+
+	return FVector2D(relativePoint.Y, relativePoint.Z);
+}

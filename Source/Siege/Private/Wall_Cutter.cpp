@@ -33,6 +33,11 @@ void UWall_Cutter::BeginPlay()
 
 	wall_polygon.Empty();
 	cut_polygon.Empty();
+
+	wall_shape.Add(FVector2D(actorScale.Y, actorScale.Z));
+	wall_shape.Add(FVector2D(-actorScale.Y, actorScale.Z));
+	wall_shape.Add(FVector2D(-actorScale.Y, -actorScale.Z));
+	wall_shape.Add(FVector2D(actorScale.Y, -actorScale.Z));
 }
 
 #pragma endregion Setup
@@ -46,32 +51,8 @@ void UWall_Cutter::Add_Cut_Point(FVector2D const& PointToAdd) {
 
 void UWall_Cutter::Start_Cut() {
 
-	// -- For testing purposes --
-
-	wall_shape.Empty();
-	cut_shape.Empty();
 	wall_polygon.Empty();
 	cut_polygon.Empty();
-
-	// Create polygon size of wall surface
-	wall_shape.Add(FVector2D(actorScale.Y, actorScale.Z));
-	wall_shape.Add(FVector2D(-actorScale.Y, actorScale.Z));
-	wall_shape.Add(FVector2D(-actorScale.Y, -actorScale.Z));
-	wall_shape.Add(FVector2D(actorScale.Y, -actorScale.Z));
-
-	// Polygon points to add
-	cut_shape = {
-		//FVector2D(119,169),
-		//FVector2D(13,177),
-		//FVector2D(-200,176),
-		//FVector2D(-39,-600),
-		//FVector2D(27,-123),
-		//FVector2D(400,-200),
-		//FVector2D(92,-60),
-		//FVector2D(193,25),
-		//FVector2D(76,45), // Problem chilkd
-		//FVector2D(174,82) //173 - 174 
-	};
 
 	Cut_Wall();
 }

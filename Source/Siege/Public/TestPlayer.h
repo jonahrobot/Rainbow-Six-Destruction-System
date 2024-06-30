@@ -32,6 +32,8 @@ public:
 	
 protected:
 
+	DECLARE_DELEGATE_OneParam(FBoolDelegate, bool);
+
 	UPROPERTY(EditAnywhere)
 	class UCameraComponent* Camera;
 
@@ -41,16 +43,17 @@ protected:
 	void MoveRight(float input);
 	void TurnCamera(float input);
 	void LookUp(float input);
-	void StartSprint();
+	void SetSprintStatus(bool newState);
 	void StopSprint();
 	void SendCutPoint();
-	void StartLaserCut();
-	void StopLaserCut();
+	void SetLaserCut(bool newState);
 
 	float DefaultSpeed;
-	FHitResult hit;
+	FHitResult currentTargetRaycastData;
 	FCollisionQueryParams collisionParams;
 	UWall_Cutter* currentTarget;
+	bool hasTarget = false;
+	FVector startCameraRotation;
 
 private:
 	bool laserCutting = false;

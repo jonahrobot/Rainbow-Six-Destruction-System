@@ -2,6 +2,7 @@
 
 
 #include "TestPlayer.h"
+#include "MathLib.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Wall_Cutter.h"
@@ -65,50 +66,68 @@ void ATestPlayer::LookUp(float input) {
 	AddControllerPitchInput(input);
 }
 
-void ATestPlayer::StartSprint() {
-	CharacterMovement->MaxWalkSpeed = DefaultSpeed * 4;
+void  ATestPlayer::SetSprintStatus(bool newState) {
+	if (newState) {
+		CharacterMovement->MaxWalkSpeed = DefaultSpeed * 4;
+	}
+	else {
+		CharacterMovement->MaxWalkSpeed = DefaultSpeed;
+	}
 }
 
-void ATestPlayer::StopSprint() {
-	CharacterMovement->MaxWalkSpeed = DefaultSpeed;
-}
+void ATestPlayer::SetLaserCut(bool newState) {
+	laserCutting = newState;
 
-void ATestPlayer::StartLaserCut() {
-	laserCutting = true; 
-}
-
-void ATestPlayer::StopLaserCut() {
-	laserCutting = false;
+	if (laserCutting == false) {
+		hasTarget = false;
+	}
 }
 
 void ATestPlayer::SendCutPoint() {
 
+	if (GetWorld() == false) return;
+
+	// If no target, raycast until target is found
+	if (hasTarget == false) {
+
+		FHitResult hit;
+		FVector rayStart = GetActorLocation() + Camera->GetRelativeLocation();
+		FVector rayEnd = rayStart + (Camera->GetForwardVector() * rayLength);
+
+		bool actorHit = GetWorld()->LineTraceSingleByChannel(hit, rayStart, rayEnd, ECC_WorldStatic, collisionParams, FCollisionResponseParams());
+
+		if (actorHit && hit.GetActor()) {
+			currentTarget = hit.GetActor()->FindComponentByClass<UWall_Cutter>();
+
+			if (currentTarget != nullptr) {
+				hasTarget = true;
+				currentTargetRaycastData = hit;
+				startCameraRotation = GetActorLocation() + Camera->GetForwardVector();
+				DrawDebugSphere(GetWorld(), hit.ImpactPoint, 4.0f, 5, FColor::Orange, true, 2.f, 0.f, 10.f);
+			}
+		}
+	}
+
+	// Once target found, lock to target and stop raycasts
+	if (hasTarget == false) return;
+
+	// Define wall plane
+	FVector wallPos = currentTargetRaycastData.ImpactPoint;
+	FVector wallNormal = currentTargetRaycastData.ImpactNormal;
+
 	FVector rayStart = GetActorLocation() + Camera->GetRelativeLocation();
 	FVector rayEnd = rayStart + (Camera->GetForwardVector() * rayLength);
 
-	if (GetWorld() == false) return;
+	// FInd point on wall plane
+	FVector pointOnWall = FMath::LinePlaneIntersection(rayStart, rayEnd, wallPos, wallNormal);
 
-	bool actorHit = GetWorld()->LineTraceSingleByChannel(hit, rayStart, rayEnd, ECC_WorldStatic, collisionParams, FCollisionResponseParams());
+	DrawDebugSphere(GetWorld(), pointOnWall, 4.0f, 5, FColor::Blue, true, 2.f, 0.f, 10.f);
 
-	if (actorHit && hit.GetActor()) {
+	// Add our point
+	FVector2D pointToAdd = MathLib::GlobalToLocal(pointOnWall, currentTargetRaycastData.GetActor());
 
-		currentTarget = hit.GetActor()->FindComponentByClass<UWall_Cutter>();
-	}
-
-	if (currentTarget == nullptr || actorHit == false) return;
-
-	FVector hitPoint = hit.ImpactPoint;
-
-	FRotator3d reverseRotation = hit.GetActor()->GetActorRotation().GetInverse();
-
-	FVector relativePoint = reverseRotation.RotateVector(hitPoint - hit.GetActor()->GetActorLocation());
-				
-	currentTarget->Add_Cut_Point(FVector2D(relativePoint.Y, relativePoint.Z));
-
-	DrawDebugSphere(GetWorld(), hit.ImpactPoint, 4.0f, 5, FColor::Blue, true, 2.f, 0.f, 10.f);
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, hit.GetActor()->GetFName().ToString());
+	currentTarget->Add_Cut_Point(pointToAdd);
 }
-
 
 // Called to bind functionality to input
 void ATestPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -120,9 +139,10 @@ void ATestPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis(FName("MoveRight"), this, &ATestPlayer::MoveRight);
 	PlayerInputComponent->BindAxis(FName("TurnCamera"), this, &ATestPlayer::TurnCamera);
 	PlayerInputComponent->BindAxis(FName("LookUp"), this, &ATestPlayer::LookUp);
-	PlayerInputComponent->BindAction(FName("Sprint"), IE_Pressed, this, &ATestPlayer::StartSprint);
-	PlayerInputComponent->BindAction(FName("Sprint"), IE_Released, this, &ATestPlayer::StopSprint);
-	PlayerInputComponent->BindAction(FName("Fire"), IE_Pressed, this, &ATestPlayer::StartLaserCut);
-	PlayerInputComponent->BindAction(FName("Fire"), IE_Released, this, &ATestPlayer::StopLaserCut);
+
+	PlayerInputComponent->BindAction<FBoolDelegate>(FName("Sprint"), IE_Pressed, this, &ATestPlayer::SetSprintStatus, true);
+	PlayerInputComponent->BindAction<FBoolDelegate>(FName("Sprint"), IE_Released, this, &ATestPlayer::SetSprintStatus,false);
+	PlayerInputComponent->BindAction<FBoolDelegate>(FName("Fire"), IE_Pressed, this, &ATestPlayer::SetLaserCut,true);
+	PlayerInputComponent->BindAction<FBoolDelegate>(FName("Fire"), IE_Released, this, &ATestPlayer::SetLaserCut, false);
 }
 

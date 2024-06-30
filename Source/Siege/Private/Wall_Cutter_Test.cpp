@@ -42,6 +42,10 @@ void UWall_Cutter_Test::Draw_Wall_Poly() {
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, "Showing: Wall Polygon");
 	}
 
+	if (cutter->wall_shape.Num() == 0) {
+		return;
+	}
+
 	FVector lastGlobal = MathLib::LocalToGlobal(cutter->wall_shape[cutter->wall_shape.Num()-1], cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
 
 	for (int i = 0; i < cutter->wall_shape.Num(); i++) {
@@ -89,11 +93,11 @@ void UWall_Cutter_Test::Draw_Cut_Poly() {
 
 		lastGlobal = global;
 
-		// Draw vector type
-		FString Text = FString::FromInt(i);
-		FVector vector = cutter->actorRotation.RotateVector(FVector(100, local.X, local.Y - 30));
+		//// Draw vector type
+		//FString Text = FString::FromInt(i);
+		//FVector vector = cutter->actorRotation.RotateVector(FVector(100, local.X, local.Y - 30));
 
-		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Red, -1.f, false, 2.0f);
+		//DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Red, -1.f, false, 2.0f);
 	}
 }
 
