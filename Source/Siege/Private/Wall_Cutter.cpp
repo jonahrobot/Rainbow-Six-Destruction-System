@@ -57,13 +57,40 @@ void UWall_Cutter::Start_Cut() {
 	Cut_Wall();
 }
 
+bool UWall_Cutter::pointInsidePolygon(FVector2D const& point, Polygon polygon) {
+
+	// Follows algorithm presented below, finds it point is inside polygon
+	// https://www.youtube.com/watch?v=RSXM9bgqxJM&list=LL&index=1
+
+	int overlaps = 0;
+
+	for (int x = 0; x < polygon.Num(); x++) {
+
+		// Find current edge for wall_polygon
+		FVector2D a_start = polygon[x].pos;
+		FVector2D a_end = polygon[(x + 1) % polygon.Num()].pos;
+
+		float x1 = a_start.X;
+		float y1 = a_start.Y;
+		float x2 = a_end.X;
+		float y2 = a_end.Y;
+
+		// This is magic idk what is going on here
+		if ((point.Y < y1) != (point.Y < y2)) {
+			if (point.X < (x1 + ((point.Y - y1) / (y2 - y1)) * (x2 - x1))) {
+				overlaps += 1;
+			}
+		}
+	}
+	
+	return overlaps % 2 == 1;
+}
+
+
 // Get intercept type, ENTER or EXIT
 // @return ENTER if intercept is entering wall_polyogn
 // @return EXIT if intercept leaving wall_polygon
 UWall_Cutter::node_type UWall_Cutter::get_intercept_type(FVector2D const& intercept_point, FVector2D const& next_point) {
-
-	// Follows algorithm presented below, finds it point is inside polygon
-	// https://www.youtube.com/watch?v=RSXM9bgqxJM&list=LL&index=1
 
 	// Get point 1 unit on path from intercept -> next point on cut_polygon
 	FVector2D dir = (next_point - intercept_point);
@@ -73,36 +100,12 @@ UWall_Cutter::node_type UWall_Cutter::get_intercept_type(FVector2D const& interc
 	FVector global = MathLib::LocalToGlobal(dir, actorOrigin, actorRotation, actorScale.X);
 	DrawDebugSphere(GetWorld(), global, 15, 10, FColor::Orange, true, -1.0f,-1);
 
+	bool nextPointInWall = pointInsidePolygon(dir, wall_polygon);
 
-	int overlaps = 0;
-
-	for (int x = 0; x < wall_shape.Num(); x++) {
-		
-		// Find current edge for wall_polygon
-		FVector2D a_start = wall_shape[x];
-		FVector2D a_end = wall_shape[(x + 1) % wall_shape.Num()];
-
-		float x1 = a_start.X;
-		float y1 = a_start.Y;
-		float x2 = a_end.X;
-		float y2 = a_end.Y;
-
-		// This is magic idk what is going on here
-		if ((dir.Y < y1) != (dir.Y < y2)) {
-			if (dir.X < (x1 + ((dir.Y - y1) / (y2 - y1)) * (x2 - x1))) {
-				overlaps += 1;
-			}
-		}
-	}
-	UE_LOG(LogTemp, Log, TEXT("OVerlaps: %d"), overlaps);
-
-	// Check if overlaps is odd number, in that case, point is inside polygon
-	// If point is inside polygon, intercept is entering
-	if (overlaps % 2 == 1) {
+	if (nextPointInWall) {
 		return INTERCEPT_ENTRY;
 	}
 	
-	// Otherwise we are leaving the polygon
 	return INTERCEPT_EXIT;
 }
 
@@ -203,22 +206,36 @@ void UWall_Cutter::Cut_Wall() {
 
 	regions.Empty();
 	TArray<POLYGON_NODE> visited;
+	
+	bool clockwise = true;
+
+	// Find Direction
+	for (int i = 0; i < cut_polygon.Num(); i++) {
+		POLYGON_NODE x = cut_polygon[i];
+		if (visited.Contains(x) == false && x.type == INTERCEPT_EXIT) {
+			int trash;
+			POLYGON_NODE firstStepClockwise = get_next_node(trash, x.intercept_index, false, true);
+
+			if (pointInsidePolygon(firstStepClockwise.pos, cut_polygon)) {
+				clockwise = false;
+			}
+			break;
+		}
+	}
 
 	for (int i = 0; i < cut_polygon.Num(); i++) {
 		POLYGON_NODE x = cut_polygon[i];
 
 		if (visited.Contains(x) == false && x.type == INTERCEPT_ENTRY) {
-			
-			Polygon new_region = walk_loop(visited,x,i);
+
+			Polygon new_region = walk_loop(visited, x, i, clockwise);
 
 			regions.Add(new_region);
 		}
 	}
-
-
 }
 
-UWall_Cutter::Polygon UWall_Cutter::walk_loop(TArray<POLYGON_NODE> &OUT_visited, POLYGON_NODE const&  start, int indexOfVertex) {
+UWall_Cutter::Polygon UWall_Cutter::walk_loop(TArray<POLYGON_NODE> &OUT_visited, POLYGON_NODE const&  start, int indexOfVertex, bool clockwise) {
 
 	Polygon loop;
 	loop.Add(start);
@@ -226,13 +243,15 @@ UWall_Cutter::Polygon UWall_Cutter::walk_loop(TArray<POLYGON_NODE> &OUT_visited,
 
 	int currentIndex = indexOfVertex;
 	bool in_cut_polygon = true;
-	POLYGON_NODE x = get_next_node(currentIndex, currentIndex, true);
+	POLYGON_NODE x = get_next_node(currentIndex, currentIndex, true, clockwise);
 
 	while (x.equals(start) == false){
 		loop.Add(x);
 
 		if (OUT_visited.Contains(x) && (x.type == INTERCEPT_ENTRY || x.type == INTERCEPT_EXIT)) {
-			UE_LOG(LogTemp, Error, TEXT("Infinite loop found when walking loop!"));
+			UE_LOG(LogTemp, Warning, TEXT("%s vs %s"), *x.pos.ToString(), *start.pos.ToString());
+			UE_LOG(LogTemp, Error, TEXT("Infinite loop found when walking loop! %s vs %s"), *x.pos.ToString(), *start.pos.ToString());
+			return loop;
 		}
 
 		OUT_visited.Add(x);
@@ -242,6 +261,12 @@ UWall_Cutter::Polygon UWall_Cutter::walk_loop(TArray<POLYGON_NODE> &OUT_visited,
 			currentIndex = x.intercept_index;
 
 			if (in_cut_polygon) {
+				int trash;
+				POLYGON_NODE firstStepClockwise = get_next_node(trash, x.intercept_index, false, true);
+
+				if (pointInsidePolygon(firstStepClockwise.pos, cut_polygon)) {
+					clockwise = false;
+				}
 				x = wall_polygon[currentIndex];
 			}
 			else {
@@ -251,19 +276,22 @@ UWall_Cutter::Polygon UWall_Cutter::walk_loop(TArray<POLYGON_NODE> &OUT_visited,
 			in_cut_polygon = !in_cut_polygon;
 		}
 
-		x = get_next_node(currentIndex, currentIndex, in_cut_polygon);
+		x = get_next_node(currentIndex, currentIndex, in_cut_polygon, clockwise);
 	}
 
 	return loop;
 }
 
-UWall_Cutter::POLYGON_NODE UWall_Cutter::get_next_node(int& OUT_new_index, int currentIndex, bool in_cut_polygon) {
+UWall_Cutter::POLYGON_NODE UWall_Cutter::get_next_node(int& OUT_new_index, int currentIndex, bool in_cut_polygon, bool goClockwise) {
+
+	int indexChange = 1;
+	if (goClockwise == false) indexChange = -1;
 
 	if (in_cut_polygon) {
 
 		if (cut_polygon.IsValidIndex(currentIndex + 1)) {
 			OUT_new_index = currentIndex + 1;
-			return cut_polygon[currentIndex + 1];
+			return cut_polygon[currentIndex + 1]; // Last changed thing
 		}
 		else {
 			OUT_new_index = 0;
@@ -272,13 +300,19 @@ UWall_Cutter::POLYGON_NODE UWall_Cutter::get_next_node(int& OUT_new_index, int c
 	}
 	else {
 
-		if (wall_polygon.IsValidIndex(currentIndex + 1)) {
-			OUT_new_index = currentIndex + 1;
-			return wall_polygon[currentIndex + 1];
+		if (wall_polygon.IsValidIndex(currentIndex + indexChange)) {
+			OUT_new_index = currentIndex + indexChange;
+			return wall_polygon[currentIndex + indexChange];
 		}
 		else {
-			OUT_new_index = 0;
-			return wall_polygon[0];
+			if (goClockwise) {
+				OUT_new_index = 0;
+				return wall_polygon[0];
+			}
+			else {
+				OUT_new_index = wall_polygon.Num()-1;
+				return wall_polygon[wall_polygon.Num() - 1];
+			}
 		}
 	}
 

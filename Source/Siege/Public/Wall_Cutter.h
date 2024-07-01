@@ -38,14 +38,19 @@ public:
 		// Marks where W-A (Weiler-Atherton) Algorithm goes for intercepts
 		int intercept_index = -1;
 
+		bool compareAproxPos(FVector2D A, FVector2D B) const {
+			return (std::roundf(A.X) == std::roundf(B.X) &&
+				std::roundf(A.Y) == std::roundf(B.Y));
+		}
+
 		bool equals(const POLYGON_NODE& other)
 		{
-			return (pos == other.pos && type == other.type);
+			return (compareAproxPos(pos,other.pos) && type == other.type);
 		}
 
 		bool operator==(const POLYGON_NODE& other) const
 		{
-			return (pos == other.pos && type == other.type);
+			return (compareAproxPos(pos, other.pos) && type == other.type);
 		}
 	};
 
@@ -64,9 +69,11 @@ private:
 	FVector actorOrigin;
 	FRotator actorRotation;
 
-	Polygon walk_loop(TArray<POLYGON_NODE>& OUT_visited, POLYGON_NODE const& start, int indexOfVertex);
+	bool pointInsidePolygon(FVector2D const& point, Polygon polygon);
 
-	POLYGON_NODE get_next_node(int& OUT_new_index, int currentIndex, bool in_cut_polygon);
+	Polygon walk_loop(TArray<POLYGON_NODE>& OUT_visited, POLYGON_NODE const& start, int indexOfVertex, bool clockwise);
+
+	POLYGON_NODE get_next_node(int& OUT_new_index, int currentIndex, bool in_cut_polygon, bool goClockwise);
 
 	node_type get_intercept_type(FVector2D const& intercept_point, FVector2D const& next_point);
 
