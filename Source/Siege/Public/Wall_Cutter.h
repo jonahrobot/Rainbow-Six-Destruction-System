@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Polygon.h"
 #include "Components/ActorComponent.h"
 #include "Wall_Cutter.generated.h"
 
@@ -28,35 +29,6 @@ public:
 
 	void addCutPoint(FVector2D const& PointToAdd);
 
-	enum InterceptTypes { NONE, ENTRY, EXIT };
-
-	struct Vertex {
-		FVector2D pos;
-		InterceptTypes type;
-		bool visited = false;
-
-		// Marks where W-A (Weiler-Atherton) Algorithm goes for intercepts
-		int intercept_index = -1;
-
-		bool compareAproxPos(FVector2D A, FVector2D B) const {
-			return (std::roundf(A.X) == std::roundf(B.X) &&
-				std::roundf(A.Y) == std::roundf(B.Y));
-		}
-
-		bool equals(const Vertex& other)
-		{
-			return (compareAproxPos(pos,other.pos) && type == other.type);
-		}
-
-		bool operator==(const Vertex& other) const
-		{
-			return (compareAproxPos(pos, other.pos) && type == other.type);
-		}
-	};
-
-	typedef TArray<UWall_Cutter::Vertex> Polygon;
-
-
 private:
 	Polygon wall_polygon;
 	Polygon cut_polygon;
@@ -69,13 +41,11 @@ private:
 	FVector actor_origin;
 	FRotator actor_rotation;
 
-	bool pointInsidePolygon(FVector2D const& point, Polygon polygon);
+	Polygon walkLoop(TArray<Polygon::Vertex>& OUT_visited, Polygon::Vertex const& start, int indexOfVertex, bool clockwise);
 
-	Polygon walkLoop(TArray<Vertex>& OUT_visited, Vertex const& start, int indexOfVertex, bool clockwise);
+	Polygon::Vertex getNextNode(int& OUT_new_index, int currentIndex, bool in_cut_polygon, bool goClockwise);
 
-	Vertex getNextNode(int& OUT_new_index, int currentIndex, bool in_cut_polygon, bool goClockwise);
-
-	InterceptTypes getInterceptType(FVector2D const& intercept_point, FVector2D const& next_point);
+	Polygon::InterceptTypes getInterceptType(FVector2D const& intercept_point, FVector2D const& next_point);
 
 
 protected:

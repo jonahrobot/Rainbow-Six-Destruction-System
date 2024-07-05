@@ -1,6 +1,7 @@
 
 #include "Wall_Cutter_Test.h"
 #include "Wall_Cutter.h"
+#include "Polygon.h"
 #include "Mathlib.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -120,10 +121,12 @@ void UWall_Cutter_Test::Draw_Wall_Intercepts() {
 	UE_LOG(LogTemp, Warning, TEXT("_____"));
 	// Draw Nodes
 
-	debug_print_polygon(cutter->wall_polygon, cutter->cut_polygon, "Wall Polygon", cutter->ENTRY);
-	debug_print_polygon(cutter->cut_polygon, cutter->wall_polygon, "Cut Polygon", cutter->EXIT);
+	debug_print_polygon(cutter->wall_polygon, cutter->cut_polygon, "Wall Polygon", Polygon::ENTRY);
+	debug_print_polygon(cutter->cut_polygon, cutter->wall_polygon, "Cut Polygon", Polygon::EXIT);
 
-	for (UWall_Cutter::Vertex const& local : cutter->wall_polygon) {
+	for (int i = 0; i < cutter->wall_polygon.Num(); i++) {
+
+		Polygon::Vertex local = *cutter->wall_polygon.getVertex(i);
 
 		//if (local.type == cutter->DEFAULT) continue;
 
@@ -136,18 +139,18 @@ void UWall_Cutter_Test::Draw_Wall_Intercepts() {
 
 		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Green, -1.f, false, 2.0f);
 
-		if (local.type == cutter->ENTRY) {
+		if (local.type == Polygon::ENTRY) {
 
 			if (local.intercept_index == -1) {
 				UE_LOG(LogTemp, Warning, TEXT("Intercept not set!"));
 				continue;
 			}
 
-			FVector2D localTo = cutter->cut_polygon[local.intercept_index].pos;
+			FVector2D localTo = cutter->cut_polygon.getVertex(local.intercept_index)->pos;
 
 			FVector globalTo = MathLib::LocalToGlobal(localTo, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 
-			UE_LOG(LogTemp, Warning, TEXT("Drawing: %s"), *cutter->cut_polygon[local.intercept_index].pos.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("Drawing: %s"), *cutter->cut_polygon.getVertex(local.intercept_index)->pos.ToString());
 
 			DrawDebugLine(GetWorld(), global, globalTo, FColor::MakeRandomColor(), true, -1.0f, 0, 10.0f);
 		}
@@ -170,9 +173,11 @@ void UWall_Cutter_Test::Draw_Cut_Intercepts() {
 		return;
 	}
 
-	for (UWall_Cutter::Vertex const& local : cutter->cut_polygon) {
+	for (int i = 0; i < cutter->cut_polygon.Num(); i++) {
 
-		if (local.type == cutter->NONE) continue;
+		Polygon::Vertex local = *cutter->cut_polygon.getVertex(i);
+
+		if (local.type == Polygon::NONE) continue;
 
 		FVector global = MathLib::LocalToGlobal(local.pos, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 		DrawDebugSphere(GetWorld(), global, 25, 3, FColor::Orange, true, -1.0f);
@@ -185,14 +190,14 @@ void UWall_Cutter_Test::Draw_Cut_Intercepts() {
 
 		UE_LOG(LogTemp, Warning, TEXT("Point on Cut Polygon: %s"), *local.pos.ToString());
 
-		if (local.type == cutter->EXIT) {
+		if (local.type == Polygon::EXIT) {
 
 			if (local.intercept_index == -1) {
 				UE_LOG(LogTemp, Warning, TEXT("Intercept not set!"));
 				continue;
 			}
 
-			FVector2D localTo = cutter->wall_polygon[local.intercept_index].pos;
+			FVector2D localTo = cutter->wall_polygon.getVertex(local.intercept_index)->pos;
 			FVector globalTo = MathLib::LocalToGlobal(localTo, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 
 			DrawDebugLine(GetWorld(), global, globalTo, FColor::MakeRandomColor(), true, -1.0f, 0, 10.0f);
@@ -210,14 +215,15 @@ void UWall_Cutter_Test::Draw_Shrapnel() {
 		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Showing: Shrapnel Polygon");
 	}
 
-	for (UWall_Cutter::Polygon const& shrapnel_polgyon : cutter->regions) {
+	for (Polygon shrapnel_polgyon : cutter->regions) {
 
-		FVector lastGlobal = MathLib::LocalToGlobal(shrapnel_polgyon[shrapnel_polgyon.Num() - 1].pos, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
+		FVector lastGlobal = MathLib::LocalToGlobal(shrapnel_polgyon.getVertex(shrapnel_polgyon.Num() - 1)->pos, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 
 		int index = 0;
 
-		for (UWall_Cutter::Vertex const& current_node : shrapnel_polgyon) {
-			FVector2D local = current_node.pos;
+		for (int i = 0; i < shrapnel_polgyon.Num(); i++) {
+
+			FVector2D local = shrapnel_polgyon.getVertex(i)->pos;
 
 			FVector global = MathLib::LocalToGlobal(local, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 			DrawDebugSphere(GetWorld(), global, 25, 5, FColor::Black, true, -1.0f);
@@ -287,7 +293,7 @@ void UWall_Cutter_Test::Step_Through_Draw() {
 	FVector2D out;
 	bool found_intersept = MathLib::Find_Intersection(out, a, b);
 
-	UWall_Cutter::InterceptTypes intercept_type = cutter->getInterceptType(out, b_end);
+	Polygon::InterceptTypes intercept_type = cutter->getInterceptType(out, b_end);
 
 
 	// Draw A line
@@ -305,10 +311,10 @@ void UWall_Cutter_Test::Step_Through_Draw() {
 		if (found_intersept) {
 			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, "Intercept!");
 
-			if (intercept_type == cutter->ENTRY) {
+			if (intercept_type == Polygon::ENTRY) {
 				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, "Entry!");
 			}
-			if (intercept_type == cutter->EXIT) {
+			if (intercept_type == Polygon::EXIT) {
 				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "EXIT!");
 			}
 
@@ -331,17 +337,19 @@ FString Vector2DToString(FVector2D vector) {
 }
 
 // Cut Polygon: [0,0]->[0,0], [0,0], [0,0]
-void UWall_Cutter_Test::debug_print_polygon(UWall_Cutter::Polygon poly, UWall_Cutter::Polygon otherPoly, FString name, UWall_Cutter::InterceptTypes checkType) {
+void UWall_Cutter_Test::debug_print_polygon(Polygon poly, Polygon otherPoly, FString name, Polygon::InterceptTypes checkType) {
 
 	FString out;
 
 	out += name + ": ";
 
-	for (UWall_Cutter::Vertex const& x : poly) {
+	for (int i = 0; i < poly.Num(); i++) {
+
+		Polygon::Vertex x = *poly.getVertex(i);
 
 		if (x.type == checkType) {
 
-			out += "[" + Vector2DToString(x.pos) + "]" + "->" + "[" + Vector2DToString(otherPoly[x.intercept_index].pos) + "]";
+			out += "[" + Vector2DToString(x.pos) + "]" + "->" + "[" + Vector2DToString(otherPoly.getVertex(x.intercept_index)->pos) + "]";
 		}
 		else {
 			out += "[" + Vector2DToString(x.pos) + "]";

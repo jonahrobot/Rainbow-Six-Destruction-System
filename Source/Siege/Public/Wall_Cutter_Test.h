@@ -4,6 +4,7 @@
 
 #include "Wall_Cutter.h"
 #include "CoreMinimal.h"
+#include "Polygon.h"
 #include "Components/ActorComponent.h"
 #include "Wall_Cutter_Test.generated.h"
 
@@ -34,7 +35,7 @@ private:
 	void Step_Y_Up();
 	void Step_Y_Down();
 
-	void debug_print_polygon(TArray<UWall_Cutter::Vertex> poly, TArray<UWall_Cutter::Vertex> otherPoly, FString name, UWall_Cutter::InterceptTypes checkType);
+	void debug_print_polygon(Polygon poly, Polygon otherPoly, FString name, Polygon::InterceptTypes checkType);
 
 protected:
 	virtual void BeginPlay() override;
