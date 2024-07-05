@@ -26,14 +26,24 @@ private:
 
 	void Draw_Wall_Intercepts();
 
-	void Draw_Cut_Intercepts();
 
+	void Step_Up();
+	void Step_Down();
+	void Step_Left();
+	void Step_Right();
 	void Step_Through_Draw();
 	void Draw_Shrapnel();
-	void Step_X_Up();
-	void Step_X_Down();
-	void Step_Y_Up();
-	void Step_Y_Down();
+
+	void Draw_Polygon_Intercepts(Polygon poly, Polygon linkedPolygon, FColor color, FString nameOfDraw);
+
+	FVector origin;
+	FRotator rotation;
+	FVector scale;
+
+	int step_through_x = 0;
+	int step_through_y = 0;
+
+	void Step(float x, float y);
 
 	void debug_print_polygon(Polygon poly, Polygon otherPoly, FString name, Polygon::InterceptTypes checkType);
 
