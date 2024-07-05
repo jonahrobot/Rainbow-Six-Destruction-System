@@ -46,12 +46,12 @@ void UWall_Cutter_Test::Draw_Wall_Poly() {
 		return;
 	}
 
-	FVector lastGlobal = MathLib::LocalToGlobal(cutter->wall_shape[cutter->wall_shape.Num()-1], cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+	FVector lastGlobal = MathLib::LocalToGlobal(cutter->wall_shape[cutter->wall_shape.Num()-1], cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 
 	for (int i = 0; i < cutter->wall_shape.Num(); i++) {
 		FVector2D local = cutter->wall_shape[i];
 
-		FVector global = MathLib::LocalToGlobal(local, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+		FVector global = MathLib::LocalToGlobal(local, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 		DrawDebugSphere(GetWorld(), global, 25, 5, FColor::Blue, true, -1.0f);
 
 		DrawDebugLine(GetWorld(), lastGlobal, global, FColor::Red, true, -1.0f, 0, 10.0f);
@@ -60,7 +60,7 @@ void UWall_Cutter_Test::Draw_Wall_Poly() {
 
 		// Draw vector type
 		FString Text = FString::FromInt(i);
-		FVector vector = cutter->actorRotation.RotateVector(FVector(100, local.X, local.Y - 30));
+		FVector vector = cutter->actor_rotation.RotateVector(FVector(100, local.X, local.Y - 30));
 
 		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Blue, -1.f, false, 2.0f);
 	}
@@ -81,12 +81,12 @@ void UWall_Cutter_Test::Draw_Cut_Poly() {
 	}
 
 
-	FVector lastGlobal = MathLib::LocalToGlobal(cutter->cut_shape[cutter->cut_shape.Num() - 1], cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+	FVector lastGlobal = MathLib::LocalToGlobal(cutter->cut_shape[cutter->cut_shape.Num() - 1], cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 
 	for (int i = 0; i < cutter->cut_shape.Num(); i++) {
 		FVector2D local = cutter->cut_shape[i];
 
-		FVector global = MathLib::LocalToGlobal(local, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+		FVector global = MathLib::LocalToGlobal(local, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 		DrawDebugSphere(GetWorld(), global, 25, 5, FColor::Red, true, -1.0f);
 
 		DrawDebugLine(GetWorld(), lastGlobal, global, FColor::Red, true, -1.0f, 0, 10.0f);
@@ -120,23 +120,23 @@ void UWall_Cutter_Test::Draw_Wall_Intercepts() {
 	UE_LOG(LogTemp, Warning, TEXT("_____"));
 	// Draw Nodes
 
-	debug_print_polygon(cutter->wall_polygon, cutter->cut_polygon, "Wall Polygon", cutter->INTERCEPT_ENTRY);
-	debug_print_polygon(cutter->cut_polygon, cutter->wall_polygon, "Cut Polygon", cutter->INTERCEPT_EXIT);
+	debug_print_polygon(cutter->wall_polygon, cutter->cut_polygon, "Wall Polygon", cutter->ENTRY);
+	debug_print_polygon(cutter->cut_polygon, cutter->wall_polygon, "Cut Polygon", cutter->EXIT);
 
-	for (UWall_Cutter::POLYGON_NODE const& local : cutter->wall_polygon) {
+	for (UWall_Cutter::Vertex const& local : cutter->wall_polygon) {
 
 		//if (local.type == cutter->DEFAULT) continue;
 
-		FVector global = MathLib::LocalToGlobal(local.pos, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+		FVector global = MathLib::LocalToGlobal(local.pos, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 		DrawDebugSphere(GetWorld(), global, 25, 3, FColor::Green, true, -1.0f);
 
 		// Draw vector type
 		FString Text = node_type_names[local.type];
-		FVector vector = cutter->actorRotation.RotateVector(FVector(100, local.pos.X, local.pos.Y - 30));
+		FVector vector = cutter->actor_rotation.RotateVector(FVector(100, local.pos.X, local.pos.Y - 30));
 
 		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Green, -1.f, false, 2.0f);
 
-		if (local.type == cutter->INTERCEPT_ENTRY) {
+		if (local.type == cutter->ENTRY) {
 
 			if (local.intercept_index == -1) {
 				UE_LOG(LogTemp, Warning, TEXT("Intercept not set!"));
@@ -145,7 +145,7 @@ void UWall_Cutter_Test::Draw_Wall_Intercepts() {
 
 			FVector2D localTo = cutter->cut_polygon[local.intercept_index].pos;
 
-			FVector globalTo = MathLib::LocalToGlobal(localTo, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+			FVector globalTo = MathLib::LocalToGlobal(localTo, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 
 			UE_LOG(LogTemp, Warning, TEXT("Drawing: %s"), *cutter->cut_polygon[local.intercept_index].pos.ToString());
 
@@ -170,22 +170,22 @@ void UWall_Cutter_Test::Draw_Cut_Intercepts() {
 		return;
 	}
 
-	for (UWall_Cutter::POLYGON_NODE const& local : cutter->cut_polygon) {
+	for (UWall_Cutter::Vertex const& local : cutter->cut_polygon) {
 
-		if (local.type == cutter->DEFAULT) continue;
+		if (local.type == cutter->NONE) continue;
 
-		FVector global = MathLib::LocalToGlobal(local.pos, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+		FVector global = MathLib::LocalToGlobal(local.pos, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 		DrawDebugSphere(GetWorld(), global, 25, 3, FColor::Orange, true, -1.0f);
 
 		// Draw vector type
 		FString Text = node_type_names[local.type];
-		FVector vector = cutter->actorRotation.RotateVector(FVector(100, local.pos.X, local.pos.Y - 30));
+		FVector vector = cutter->actor_rotation.RotateVector(FVector(100, local.pos.X, local.pos.Y - 30));
 
 		DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Orange, -1.f, false, 2.0f);
 
 		UE_LOG(LogTemp, Warning, TEXT("Point on Cut Polygon: %s"), *local.pos.ToString());
 
-		if (local.type == cutter->INTERCEPT_EXIT) {
+		if (local.type == cutter->EXIT) {
 
 			if (local.intercept_index == -1) {
 				UE_LOG(LogTemp, Warning, TEXT("Intercept not set!"));
@@ -193,7 +193,7 @@ void UWall_Cutter_Test::Draw_Cut_Intercepts() {
 			}
 
 			FVector2D localTo = cutter->wall_polygon[local.intercept_index].pos;
-			FVector globalTo = MathLib::LocalToGlobal(localTo, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+			FVector globalTo = MathLib::LocalToGlobal(localTo, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 
 			DrawDebugLine(GetWorld(), global, globalTo, FColor::MakeRandomColor(), true, -1.0f, 0, 10.0f);
 		}
@@ -212,14 +212,14 @@ void UWall_Cutter_Test::Draw_Shrapnel() {
 
 	for (UWall_Cutter::Polygon const& shrapnel_polgyon : cutter->regions) {
 
-		FVector lastGlobal = MathLib::LocalToGlobal(shrapnel_polgyon[shrapnel_polgyon.Num() - 1].pos, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+		FVector lastGlobal = MathLib::LocalToGlobal(shrapnel_polgyon[shrapnel_polgyon.Num() - 1].pos, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 
 		int index = 0;
 
-		for (UWall_Cutter::POLYGON_NODE const& current_node : shrapnel_polgyon) {
+		for (UWall_Cutter::Vertex const& current_node : shrapnel_polgyon) {
 			FVector2D local = current_node.pos;
 
-			FVector global = MathLib::LocalToGlobal(local, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+			FVector global = MathLib::LocalToGlobal(local, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 			DrawDebugSphere(GetWorld(), global, 25, 5, FColor::Black, true, -1.0f);
 
 			DrawDebugLine(GetWorld(), lastGlobal, global, FColor::Black, true, -1.0f, 0, 10.0f);
@@ -227,7 +227,7 @@ void UWall_Cutter_Test::Draw_Shrapnel() {
 			lastGlobal = global;
 					// Draw vector type
 			FString Text = FString::FromInt(index);
-			FVector vector = cutter->actorRotation.RotateVector(FVector(100, local.X, local.Y - 30));
+			FVector vector = cutter->actor_rotation.RotateVector(FVector(100, local.X, local.Y - 30));
 
 			DrawDebugString(GetWorld(), vector, Text, GetOwner(), FColor::Red, -1.f, false, 2.0f);
 			index += 1;
@@ -287,14 +287,14 @@ void UWall_Cutter_Test::Step_Through_Draw() {
 	FVector2D out;
 	bool found_intersept = MathLib::Find_Intersection(out, a, b);
 
-	UWall_Cutter::node_type intercept_type = cutter->get_intercept_type(out, b_end);
+	UWall_Cutter::InterceptTypes intercept_type = cutter->getInterceptType(out, b_end);
 
 
 	// Draw A line
-	FVector g_a_start = MathLib::LocalToGlobal(a_start, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
-	FVector g_a_end = MathLib::LocalToGlobal(a_end, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
-	FVector g_b_start = MathLib::LocalToGlobal(b_start, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
-	FVector g_b_end = MathLib::LocalToGlobal(b_end, cutter->actorOrigin, cutter->actorRotation, cutter->actorScale.X);
+	FVector g_a_start = MathLib::LocalToGlobal(a_start, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
+	FVector g_a_end = MathLib::LocalToGlobal(a_end, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
+	FVector g_b_start = MathLib::LocalToGlobal(b_start, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
+	FVector g_b_end = MathLib::LocalToGlobal(b_end, cutter->actor_origin, cutter->actor_rotation, cutter->actor_scale.X);
 	DrawDebugLine(GetWorld(), g_a_start, g_a_end, FColor::Red, true, -1.0f, 0, 10.0f);
 	DrawDebugLine(GetWorld(), g_b_start, g_b_end, FColor::Green, true, -1.0f, 0, 10.0f);
 
@@ -305,10 +305,10 @@ void UWall_Cutter_Test::Step_Through_Draw() {
 		if (found_intersept) {
 			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, "Intercept!");
 
-			if (intercept_type == cutter->INTERCEPT_ENTRY) {
+			if (intercept_type == cutter->ENTRY) {
 				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Green, "Entry!");
 			}
-			if (intercept_type == cutter->INTERCEPT_EXIT) {
+			if (intercept_type == cutter->EXIT) {
 				GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "EXIT!");
 			}
 
@@ -331,13 +331,13 @@ FString Vector2DToString(FVector2D vector) {
 }
 
 // Cut Polygon: [0,0]->[0,0], [0,0], [0,0]
-void UWall_Cutter_Test::debug_print_polygon(UWall_Cutter::Polygon poly, UWall_Cutter::Polygon otherPoly, FString name, UWall_Cutter::node_type checkType) {
+void UWall_Cutter_Test::debug_print_polygon(UWall_Cutter::Polygon poly, UWall_Cutter::Polygon otherPoly, FString name, UWall_Cutter::InterceptTypes checkType) {
 
 	FString out;
 
 	out += name + ": ";
 
-	for (UWall_Cutter::POLYGON_NODE const& x : poly) {
+	for (UWall_Cutter::Vertex const& x : poly) {
 
 		if (x.type == checkType) {
 

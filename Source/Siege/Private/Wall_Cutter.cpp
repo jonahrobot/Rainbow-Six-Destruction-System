@@ -23,38 +23,30 @@ void UWall_Cutter::BeginPlay()
 
 	if (IsValid(FirstLocalPlayer) && IsValid(FirstLocalPlayer->InputComponent)) {
 
-		FirstLocalPlayer->InputComponent->BindAction(FName("Explode"), IE_Pressed, this, &UWall_Cutter::Start_Cut);
+		FirstLocalPlayer->InputComponent->BindAction(FName("Explode"), IE_Pressed, this, &UWall_Cutter::cutWall);
 
 	}
 
-	actorScale = GetOwner()->GetActorScale() / 2 * 100;
-	actorOrigin = GetOwner()->GetActorLocation();
-	actorRotation = GetOwner()->GetActorRotation();
+	actor_scale = GetOwner()->GetActorScale() / 2 * 100;
+	actor_origin = GetOwner()->GetActorLocation();
+	actor_rotation = GetOwner()->GetActorRotation();
 
 	wall_polygon.Empty();
 	cut_polygon.Empty();
 
-	wall_shape.Add(FVector2D(actorScale.Y, actorScale.Z));
-	wall_shape.Add(FVector2D(-actorScale.Y, actorScale.Z));
-	wall_shape.Add(FVector2D(-actorScale.Y, -actorScale.Z));
-	wall_shape.Add(FVector2D(actorScale.Y, -actorScale.Z));
+	wall_shape.Add(FVector2D(actor_scale.Y, actor_scale.Z));
+	wall_shape.Add(FVector2D(-actor_scale.Y, actor_scale.Z));
+	wall_shape.Add(FVector2D(-actor_scale.Y, -actor_scale.Z));
+	wall_shape.Add(FVector2D(actor_scale.Y, -actor_scale.Z));
 }
 
 #pragma endregion Setup
 
 #pragma region Helper Methods
 
-void UWall_Cutter::Add_Cut_Point(FVector2D const& PointToAdd) {
+void UWall_Cutter::addCutPoint(FVector2D const& PointToAdd) {
 	cut_shape.Add(PointToAdd);
 
-}
-
-void UWall_Cutter::Start_Cut() {
-
-	wall_polygon.Empty();
-	cut_polygon.Empty();
-
-	Cut_Wall();
 }
 
 bool UWall_Cutter::pointInsidePolygon(FVector2D const& point, Polygon polygon) {
@@ -90,23 +82,23 @@ bool UWall_Cutter::pointInsidePolygon(FVector2D const& point, Polygon polygon) {
 // Get intercept type, ENTER or EXIT
 // @return ENTER if intercept is entering wall_polyogn
 // @return EXIT if intercept leaving wall_polygon
-UWall_Cutter::node_type UWall_Cutter::get_intercept_type(FVector2D const& intercept_point, FVector2D const& next_point) {
+UWall_Cutter::InterceptTypes UWall_Cutter::getInterceptType(FVector2D const& intercept_point, FVector2D const& next_point) {
 
 	// Get point 1 unit on path from intercept -> next point on cut_polygon
 	FVector2D dir = (next_point - intercept_point);
 	dir.Normalize(0.01f);
 	dir = intercept_point + dir;
 
-	FVector global = MathLib::LocalToGlobal(dir, actorOrigin, actorRotation, actorScale.X);
+	FVector global = MathLib::LocalToGlobal(dir, actor_origin, actor_rotation, actor_scale.X);
 	DrawDebugSphere(GetWorld(), global, 15, 10, FColor::Orange, true, -1.0f,-1);
 
 	bool nextPointInWall = pointInsidePolygon(dir, wall_polygon);
 
 	if (nextPointInWall) {
-		return INTERCEPT_ENTRY;
+		return ENTRY;
 	}
 	
-	return INTERCEPT_EXIT;
+	return EXIT;
 }
 
 #pragma endregion Helper Methods
@@ -118,7 +110,7 @@ UWall_Cutter::node_type UWall_Cutter::get_intercept_type(FVector2D const& interc
  *	@cut_shape the polygon we want to cut from the wall
  *		- cut_shape vertices must be ordered clockwise
  */
-void UWall_Cutter::Cut_Wall() {
+void UWall_Cutter::cutWall() {
 
 	// Follows Weiler-Atherton polygon clipping algorithm
 
@@ -127,12 +119,12 @@ void UWall_Cutter::Cut_Wall() {
 	wall_polygon.Empty(); cut_polygon.Empty();
 
 	for (FVector2D const x : wall_shape) {
-		POLYGON_NODE current = { x,DEFAULT,NULL };
+		Vertex current = { x,NONE,NULL };
 		wall_polygon.Add(current);
 	}
 
 	for (FVector2D const x : cut_shape) {
-		POLYGON_NODE current = { x,DEFAULT,NULL };
+		Vertex current = { x,NONE,NULL };
 		cut_polygon.Add(current);
 	}
 
@@ -165,14 +157,14 @@ void UWall_Cutter::Cut_Wall() {
 
 			// If intercept found -
 
-			POLYGON_NODE add_to_wall;
-			POLYGON_NODE add_to_cut;
+			Vertex add_to_wall;
+			Vertex add_to_cut;
 
 			add_to_wall.pos = out;
 			add_to_cut.pos = out;
 
 			// Check if Intercept is ENTRY or EXIT
-			node_type intercept_type = get_intercept_type(out, b_end);
+			InterceptTypes intercept_type = getInterceptType(out, b_end);
 
 			add_to_wall.type = intercept_type;
 			add_to_cut.type = intercept_type;
@@ -189,12 +181,12 @@ void UWall_Cutter::Cut_Wall() {
 			// Link up!
 
 			// (ENTRY links wall_polygon -> cut_polygon) 
-			if (intercept_type == INTERCEPT_ENTRY) {
+			if (intercept_type == ENTRY) {
 				wall_polygon[x + total_added_to_wall].intercept_index = y + total_added_to_cut;
 			}
 
 			// (EXIT links cut_polygon -> wall_polygon) 
-			if (intercept_type == INTERCEPT_EXIT) {
+			if (intercept_type == EXIT) {
 				cut_polygon[y + total_added_to_cut].intercept_index = x + total_added_to_wall;
 			}
 		}
@@ -205,16 +197,16 @@ void UWall_Cutter::Cut_Wall() {
 	// Find our resulting destruction piece polygons
 
 	regions.Empty();
-	TArray<POLYGON_NODE> visited;
+	TArray<Vertex> visited;
 	
 	bool clockwise = true;
 
 	// Find Direction
 	for (int i = 0; i < cut_polygon.Num(); i++) {
-		POLYGON_NODE x = cut_polygon[i];
-		if (visited.Contains(x) == false && x.type == INTERCEPT_EXIT) {
+		Vertex x = cut_polygon[i];
+		if (visited.Contains(x) == false && x.type == EXIT) {
 			int trash;
-			POLYGON_NODE firstStepClockwise = get_next_node(trash, x.intercept_index, false, true);
+			Vertex firstStepClockwise = getNextNode(trash, x.intercept_index, false, true);
 
 			if (pointInsidePolygon(firstStepClockwise.pos, cut_polygon)) {
 				clockwise = false;
@@ -224,18 +216,18 @@ void UWall_Cutter::Cut_Wall() {
 	}
 
 	for (int i = 0; i < cut_polygon.Num(); i++) {
-		POLYGON_NODE x = cut_polygon[i];
+		Vertex x = cut_polygon[i];
 
-		if (visited.Contains(x) == false && x.type == INTERCEPT_ENTRY) {
+		if (visited.Contains(x) == false && x.type == ENTRY) {
 
-			Polygon new_region = walk_loop(visited, x, i, clockwise);
+			Polygon new_region = walkLoop(visited, x, i, clockwise);
 
 			regions.Add(new_region);
 		}
 	}
 }
 
-UWall_Cutter::Polygon UWall_Cutter::walk_loop(TArray<POLYGON_NODE> &OUT_visited, POLYGON_NODE const&  start, int indexOfVertex, bool clockwise) {
+UWall_Cutter::Polygon UWall_Cutter::walkLoop(TArray<Vertex> &OUT_visited, Vertex const&  start, int indexOfVertex, bool clockwise) {
 
 	Polygon loop;
 	loop.Add(start);
@@ -243,12 +235,12 @@ UWall_Cutter::Polygon UWall_Cutter::walk_loop(TArray<POLYGON_NODE> &OUT_visited,
 
 	int currentIndex = indexOfVertex;
 	bool in_cut_polygon = true;
-	POLYGON_NODE x = get_next_node(currentIndex, currentIndex, true, clockwise);
+	Vertex x = getNextNode(currentIndex, currentIndex, true, clockwise);
 
 	while (x.equals(start) == false){
 		loop.Add(x);
 
-		if (OUT_visited.Contains(x) && (x.type == INTERCEPT_ENTRY || x.type == INTERCEPT_EXIT)) {
+		if (OUT_visited.Contains(x) && (x.type == ENTRY || x.type == EXIT)) {
 			UE_LOG(LogTemp, Warning, TEXT("%s vs %s"), *x.pos.ToString(), *start.pos.ToString());
 			UE_LOG(LogTemp, Error, TEXT("Infinite loop found when walking loop! %s vs %s"), *x.pos.ToString(), *start.pos.ToString());
 			return loop;
@@ -256,13 +248,13 @@ UWall_Cutter::Polygon UWall_Cutter::walk_loop(TArray<POLYGON_NODE> &OUT_visited,
 
 		OUT_visited.Add(x);
 
-		if (x.intercept_index != -1 && (x.type == INTERCEPT_ENTRY || x.type == INTERCEPT_EXIT)) {
+		if (x.intercept_index != -1 && (x.type == ENTRY || x.type == EXIT)) {
 
 			currentIndex = x.intercept_index;
 
 			if (in_cut_polygon) {
 				int trash;
-				POLYGON_NODE firstStepClockwise = get_next_node(trash, x.intercept_index, false, true);
+				Vertex firstStepClockwise = getNextNode(trash, x.intercept_index, false, true);
 
 				if (pointInsidePolygon(firstStepClockwise.pos, cut_polygon)) {
 					clockwise = false;
@@ -276,13 +268,13 @@ UWall_Cutter::Polygon UWall_Cutter::walk_loop(TArray<POLYGON_NODE> &OUT_visited,
 			in_cut_polygon = !in_cut_polygon;
 		}
 
-		x = get_next_node(currentIndex, currentIndex, in_cut_polygon, clockwise);
+		x = getNextNode(currentIndex, currentIndex, in_cut_polygon, clockwise);
 	}
 
 	return loop;
 }
 
-UWall_Cutter::POLYGON_NODE UWall_Cutter::get_next_node(int& OUT_new_index, int currentIndex, bool in_cut_polygon, bool goClockwise) {
+UWall_Cutter::Vertex UWall_Cutter::getNextNode(int& OUT_new_index, int currentIndex, bool in_cut_polygon, bool goClockwise) {
 
 	int indexChange = 1;
 	if (goClockwise == false) indexChange = -1;

@@ -126,7 +126,7 @@ void ATestPlayer::SendCutPoint() {
 	// Add our point
 	FVector2D pointToAdd = MathLib::GlobalToLocal(pointOnWall, currentTargetRaycastData.GetActor());
 
-	currentTarget->Add_Cut_Point(pointToAdd);
+	currentTarget->addCutPoint(pointToAdd);
 }
 
 // Called to bind functionality to input

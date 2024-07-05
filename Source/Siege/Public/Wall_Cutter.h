@@ -20,19 +20,19 @@ public:
 	 *
 	 *	@cut_polygon the polygon we want to cut from the wall
 	 */
-	void Cut_Wall();
+	void cutWall();
 
 	// Replicate input from user for testing
 	// Calls Cut_Wall with pre-defined shape
-	void Start_Cut();
+	void startCut();
 
-	void Add_Cut_Point(FVector2D const& PointToAdd);
+	void addCutPoint(FVector2D const& PointToAdd);
 
-	enum node_type { DEFAULT, INTERCEPT_ENTRY, INTERCEPT_EXIT };
+	enum InterceptTypes { NONE, ENTRY, EXIT };
 
-	struct POLYGON_NODE {
+	struct Vertex {
 		FVector2D pos;
-		node_type type;
+		InterceptTypes type;
 		bool visited = false;
 
 		// Marks where W-A (Weiler-Atherton) Algorithm goes for intercepts
@@ -43,18 +43,18 @@ public:
 				std::roundf(A.Y) == std::roundf(B.Y));
 		}
 
-		bool equals(const POLYGON_NODE& other)
+		bool equals(const Vertex& other)
 		{
 			return (compareAproxPos(pos,other.pos) && type == other.type);
 		}
 
-		bool operator==(const POLYGON_NODE& other) const
+		bool operator==(const Vertex& other) const
 		{
 			return (compareAproxPos(pos, other.pos) && type == other.type);
 		}
 	};
 
-	typedef TArray<UWall_Cutter::POLYGON_NODE> Polygon;
+	typedef TArray<UWall_Cutter::Vertex> Polygon;
 
 
 private:
@@ -65,17 +65,17 @@ private:
 	TArray<FVector2D> wall_shape;
 	TArray<FVector2D> cut_shape;
 
-	FVector actorScale;
-	FVector actorOrigin;
-	FRotator actorRotation;
+	FVector actor_scale;
+	FVector actor_origin;
+	FRotator actor_rotation;
 
 	bool pointInsidePolygon(FVector2D const& point, Polygon polygon);
 
-	Polygon walk_loop(TArray<POLYGON_NODE>& OUT_visited, POLYGON_NODE const& start, int indexOfVertex, bool clockwise);
+	Polygon walkLoop(TArray<Vertex>& OUT_visited, Vertex const& start, int indexOfVertex, bool clockwise);
 
-	POLYGON_NODE get_next_node(int& OUT_new_index, int currentIndex, bool in_cut_polygon, bool goClockwise);
+	Vertex getNextNode(int& OUT_new_index, int currentIndex, bool in_cut_polygon, bool goClockwise);
 
-	node_type get_intercept_type(FVector2D const& intercept_point, FVector2D const& next_point);
+	InterceptTypes getInterceptType(FVector2D const& intercept_point, FVector2D const& next_point);
 
 
 protected:

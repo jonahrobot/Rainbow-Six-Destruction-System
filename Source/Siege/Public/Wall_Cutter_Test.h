@@ -34,7 +34,7 @@ private:
 	void Step_Y_Up();
 	void Step_Y_Down();
 
-	void debug_print_polygon(TArray<UWall_Cutter::POLYGON_NODE> poly, TArray<UWall_Cutter::POLYGON_NODE> otherPoly, FString name, UWall_Cutter::node_type checkType);
+	void debug_print_polygon(TArray<UWall_Cutter::Vertex> poly, TArray<UWall_Cutter::Vertex> otherPoly, FString name, UWall_Cutter::InterceptTypes checkType);
 
 protected:
 	virtual void BeginPlay() override;
