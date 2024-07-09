@@ -34,7 +34,7 @@ private:
 	void Step_Through_Draw();
 	void Draw_Shrapnel();
 
-	void Draw_Polygon_Intercepts(Polygon poly, Polygon linkedPolygon, FColor color, FString nameOfDraw);
+	void Draw_Polygon(Polygon poly, FString nameOfDraw, bool drawEdges);
 
 	FVector origin;
 	FRotator rotation;

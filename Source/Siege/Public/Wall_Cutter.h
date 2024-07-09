@@ -34,8 +34,8 @@ private:
 	Polygon cut_polygon;
 	TArray<Polygon> regions;
 
-	TArray<FVector2D> wall_shape;
-	TArray<FVector2D> cut_shape;
+	Polygon start_wall_polygon;
+	Polygon start_cut_polygon;
 
 	FVector actor_scale;
 	FVector actor_origin;

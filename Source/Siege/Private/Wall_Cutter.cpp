@@ -35,10 +35,10 @@ void UWall_Cutter::BeginPlay()
 	wall_polygon.Empty();
 	cut_polygon.Empty();
 
-	wall_shape.Add(FVector2D(actor_scale.Y, actor_scale.Z));
-	wall_shape.Add(FVector2D(-actor_scale.Y, actor_scale.Z));
-	wall_shape.Add(FVector2D(-actor_scale.Y, -actor_scale.Z));
-	wall_shape.Add(FVector2D(actor_scale.Y, -actor_scale.Z));
+	start_wall_polygon.Add({ FVector2D(actor_scale.Y, actor_scale.Z),Polygon::NONE,NULL });
+	start_wall_polygon.Add({ FVector2D(-actor_scale.Y, actor_scale.Z),Polygon::NONE,NULL });
+	start_wall_polygon.Add({ FVector2D(-actor_scale.Y, -actor_scale.Z),Polygon::NONE,NULL });
+	start_wall_polygon.Add({ FVector2D(actor_scale.Y, -actor_scale.Z),Polygon::NONE,NULL });
 }
 
 #pragma endregion Setup
@@ -46,7 +46,7 @@ void UWall_Cutter::BeginPlay()
 #pragma region Helper Methods
 
 void UWall_Cutter::addCutPoint(FVector2D const& PointToAdd) {
-	cut_shape.Add(PointToAdd);
+	start_cut_polygon.Add({ PointToAdd, Polygon::NONE, NULL });
 }
 
 
@@ -89,13 +89,14 @@ void UWall_Cutter::cutWall() {
 
 	wall_polygon.Empty(); cut_polygon.Empty();
 
-	for (FVector2D const x : wall_shape) {
-		Polygon::Vertex current = { x,Polygon::NONE,NULL };
+
+	for (int i = 0; i < start_wall_polygon.Num(); i++) {
+		Polygon::Vertex current = { start_wall_polygon.getVertex(i)->pos,Polygon::NONE,NULL};
 		wall_polygon.Add(current);
 	}
 
-	for (FVector2D const x : cut_shape) {
-		Polygon::Vertex current = { x,Polygon::NONE,NULL };
+	for (int i = 0; i < start_cut_polygon.Num(); i++) {
+		Polygon::Vertex current = { start_cut_polygon.getVertex(i)->pos,Polygon::NONE,NULL };
 		cut_polygon.Add(current);
 	}
 
