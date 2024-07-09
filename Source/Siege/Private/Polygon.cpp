@@ -9,6 +9,7 @@ Polygon::Polygon()
 
 Polygon::~Polygon()
 {
+
 }
 
 bool Polygon::pointInsidePolygon(FVector2D const& point) const{

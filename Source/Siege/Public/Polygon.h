@@ -32,8 +32,6 @@ public:
         }
     };
 
-    TArray<Vertex> vertices;
-
     bool pointInsidePolygon(FVector2D const& point) const;
 
     Vertex* getVertex(int index);
@@ -49,4 +47,8 @@ public:
     bool IsValidIndex(int index) const;
 
     bool IsEmpty() const;
+
+private:
+    TArray<Vertex> vertices;
+
 };

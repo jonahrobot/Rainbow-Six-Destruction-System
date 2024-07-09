@@ -171,17 +171,17 @@ void UWall_Cutter::cutWall() {
 	regions.Empty();
 	TArray<Polygon::Vertex> visited;
 	
-	bool clockwise = true;
+	int clockwise = 1;
 
 	// Find Direction
 	for (int i = 0; i < cut_polygon.Num(); i++) {
 		Polygon::Vertex x = *cut_polygon.getVertex(i);
 		if (visited.Contains(x) == false && x.type == Polygon::EXIT) {
 			int trash;
-			Polygon::Vertex firstStepClockwise = getNextNode(trash, x.intercept_index, false, true);
+			Polygon::Vertex firstStepClockwise = getNextNode(trash, x.intercept_index, false, 1);
 
 			if (cut_polygon.pointInsidePolygon(firstStepClockwise.pos)) {
-				clockwise = false;
+				clockwise = -1;
 			}
 			break;
 		}
@@ -199,7 +199,7 @@ void UWall_Cutter::cutWall() {
 	}
 }
 
-Polygon UWall_Cutter::walkLoop(TArray<Polygon::Vertex> &OUT_visited, Polygon::Vertex const&  start, int indexOfVertex, bool clockwise) {
+Polygon UWall_Cutter::walkLoop(TArray<Polygon::Vertex> &OUT_visited, Polygon::Vertex const&  start, int indexOfVertex, int direction) {
 
 	Polygon loop;
 	loop.Add(start);
@@ -207,7 +207,7 @@ Polygon UWall_Cutter::walkLoop(TArray<Polygon::Vertex> &OUT_visited, Polygon::Ve
 
 	int currentIndex = indexOfVertex;
 	bool in_cut_polygon = true;
-	Polygon::Vertex x = getNextNode(currentIndex, currentIndex, true, clockwise);
+	Polygon::Vertex x = getNextNode(currentIndex, currentIndex, true, direction);
 
 	while (x.equals(start) == false){
 		loop.Add(x);
@@ -226,10 +226,10 @@ Polygon UWall_Cutter::walkLoop(TArray<Polygon::Vertex> &OUT_visited, Polygon::Ve
 
 			if (in_cut_polygon) {
 				int trash;
-				Polygon::Vertex firstStepClockwise = getNextNode(trash, x.intercept_index, false, true);
+				Polygon::Vertex firstStepClockwise = getNextNode(trash, x.intercept_index, false, 1);
 
 				if (cut_polygon.pointInsidePolygon(firstStepClockwise.pos)) {
-					clockwise = false;
+					direction = -1;
 				}
 				x = *wall_polygon.getVertex(currentIndex);
 			}
@@ -240,44 +240,21 @@ Polygon UWall_Cutter::walkLoop(TArray<Polygon::Vertex> &OUT_visited, Polygon::Ve
 			in_cut_polygon = !in_cut_polygon;
 		}
 
-		x = getNextNode(currentIndex, currentIndex, in_cut_polygon, clockwise);
+		x = getNextNode(currentIndex, currentIndex, in_cut_polygon, direction);
 	}
 
 	return loop;
 }
 
-Polygon::Vertex UWall_Cutter::getNextNode(int& OUT_new_index, int currentIndex, bool in_cut_polygon, bool goClockwise) {
 
-	int indexChange = 1;
-	if (goClockwise == false) indexChange = -1;
+Polygon::Vertex UWall_Cutter::getNextNode(int& OUT_new_index, int currentIndex, bool in_cut_polygon, int direction) {
 
 	if (in_cut_polygon) {
-
-		if (cut_polygon.IsValidIndex(currentIndex + 1)) {
-			OUT_new_index = currentIndex + 1;
-			return *cut_polygon.getVertex(currentIndex + 1); // Last changed thing
-		}
-		else {
-			OUT_new_index = 0;
-			return *cut_polygon.getVertex(0);
-		}
-	}
-	else {
-
-		if (wall_polygon.IsValidIndex(currentIndex + indexChange)) {
-			OUT_new_index = currentIndex + indexChange;
-			return *wall_polygon.getVertex(currentIndex + indexChange);
-		}
-		else {
-			if (goClockwise) {
-				OUT_new_index = 0;
-				return *wall_polygon.getVertex(0);
-			}
-			else {
-				OUT_new_index = wall_polygon.Num()-1;
-				return *wall_polygon.getVertex(wall_polygon.Num() - 1);
-			}
-		}
+		OUT_new_index = (currentIndex + 1) % cut_polygon.Num();
+		return *cut_polygon.getVertex(OUT_new_index);
+	} else {
+		OUT_new_index = (currentIndex + direction) % wall_polygon.Num();
+		return *wall_polygon.getVertex(OUT_new_index);
 	}
 
 }
