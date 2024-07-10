@@ -9,7 +9,7 @@ Polygon::Polygon()
 
 Polygon::~Polygon()
 {
-
+	Empty();
 }
 
 bool Polygon::pointInsidePolygon(FVector2D const& point) const{
@@ -42,20 +42,28 @@ bool Polygon::pointInsidePolygon(FVector2D const& point) const{
 }
 
 Polygon::Vertex* Polygon::getVertex(int index){
-	verify(vertices.IsValidIndex(index));
 	return &vertices[index];
+}
+
+Polygon::Vertex const Polygon::getVertexConst(int index) const{
+	return vertices[index];
 }
 
 int Polygon::Num() const{
 	return vertices.Num();
 }
 
-int Polygon::Insert(Vertex x, int index) {
-	return vertices.Insert(x, index);
+int Polygon::Insert(Vertex* x, int index) {
+	return vertices.Insert(*x, index);
 }
 
-void Polygon::Add(Vertex x) {
-	vertices.Add(x);
+void Polygon::Add(Vertex* x) {
+
+	Vertex* Head = nullptr;
+	Vertex* Tail = nullptr;
+	int size = 0;
+
+	vertices.Add(*x);
 }
 
 void Polygon::Empty() {
@@ -68,4 +76,5 @@ bool Polygon::IsValidIndex(int index) const{
 
 bool Polygon::IsEmpty() const{
 	return vertices.IsEmpty();
+	
 }

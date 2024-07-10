@@ -35,10 +35,10 @@ void UWall_Cutter::BeginPlay()
 	wall_polygon.Empty();
 	cut_polygon.Empty();
 
-	start_wall_polygon.Add({ FVector2D(actor_scale.Y, actor_scale.Z),Polygon::NONE,NULL });
-	start_wall_polygon.Add({ FVector2D(-actor_scale.Y, actor_scale.Z),Polygon::NONE,NULL });
-	start_wall_polygon.Add({ FVector2D(-actor_scale.Y, -actor_scale.Z),Polygon::NONE,NULL });
-	start_wall_polygon.Add({ FVector2D(actor_scale.Y, -actor_scale.Z),Polygon::NONE,NULL });
+	start_wall_polygon.Add(new Polygon::Vertex(FVector2D(actor_scale.Y, actor_scale.Z),Polygon::NONE));
+	start_wall_polygon.Add(new Polygon::Vertex(FVector2D(-actor_scale.Y, actor_scale.Z),Polygon::NONE));
+	start_wall_polygon.Add(new Polygon::Vertex(FVector2D(-actor_scale.Y, -actor_scale.Z),Polygon::NONE));
+	start_wall_polygon.Add(new Polygon::Vertex(FVector2D(actor_scale.Y, -actor_scale.Z),Polygon::NONE));
 }
 
 #pragma endregion Setup
@@ -46,7 +46,7 @@ void UWall_Cutter::BeginPlay()
 #pragma region Helper Methods
 
 void UWall_Cutter::addCutPoint(FVector2D const& PointToAdd) {
-	start_cut_polygon.Add({ PointToAdd, Polygon::NONE, NULL });
+	start_cut_polygon.Add(new Polygon::Vertex(PointToAdd, Polygon::NONE));
 }
 
 
@@ -89,16 +89,8 @@ void UWall_Cutter::cutWall() {
 
 	wall_polygon.Empty(); cut_polygon.Empty();
 
-
-	for (int i = 0; i < start_wall_polygon.Num(); i++) {
-		Polygon::Vertex current = { start_wall_polygon.getVertex(i)->pos,Polygon::NONE,NULL};
-		wall_polygon.Add(current);
-	}
-
-	for (int i = 0; i < start_cut_polygon.Num(); i++) {
-		Polygon::Vertex current = { start_cut_polygon.getVertex(i)->pos,Polygon::NONE,NULL };
-		cut_polygon.Add(current);
-	}
+	wall_polygon = start_wall_polygon;
+	cut_polygon = start_cut_polygon;
 
 	// Find intersections between the two polygons
 	// Then add them to the new wall_polygon and cut_polygon
@@ -129,17 +121,10 @@ void UWall_Cutter::cutWall() {
 
 			// If intercept found -
 
-			Polygon::Vertex add_to_wall;
-			Polygon::Vertex add_to_cut;
-
-			add_to_wall.pos = out;
-			add_to_cut.pos = out;
-
-			// Check if Intercept is ENTRY or EXIT
 			Polygon::InterceptTypes intercept_type = getInterceptType(out, b_end);
 
-			add_to_wall.type = intercept_type;
-			add_to_cut.type = intercept_type;
+			Polygon::Vertex* add_to_wall = new Polygon::Vertex(out,intercept_type);
+			Polygon::Vertex* add_to_cut = new Polygon::Vertex(out, intercept_type);
 
 			// Create intercept link (ENTRY links in wall_polygon) (EXIT links in cut_polygon)
 
@@ -175,12 +160,12 @@ void UWall_Cutter::cutWall() {
 
 	// Find Direction
 	for (int i = 0; i < cut_polygon.Num(); i++) {
-		Polygon::Vertex x = *cut_polygon.getVertex(i);
-		if (visited.Contains(x) == false && x.type == Polygon::EXIT) {
+		Polygon::Vertex* x = cut_polygon.getVertex(i);
+		if (visited.Contains(*x) == false && x->type == Polygon::EXIT) {
 			int trash;
-			Polygon::Vertex firstStepClockwise = getNextNode(trash, x.intercept_index, false, 1);
+			Polygon::Vertex* firstStepClockwise = getNextNode(trash, x->intercept_index, false, 1);
 
-			if (cut_polygon.pointInsidePolygon(firstStepClockwise.pos)) {
+			if (cut_polygon.pointInsidePolygon(firstStepClockwise->pos)) {
 				clockwise = -1;
 			}
 			break;
@@ -188,9 +173,9 @@ void UWall_Cutter::cutWall() {
 	}
 
 	for (int i = 0; i < cut_polygon.Num(); i++) {
-		Polygon::Vertex x = *cut_polygon.getVertex(i);
+		Polygon::Vertex* x = cut_polygon.getVertex(i);
 
-		if (visited.Contains(x) == false && x.type == Polygon::ENTRY) {
+		if (visited.Contains(*x) == false && x->type == Polygon::ENTRY) {
 
 			Polygon new_region = walkLoop(visited, x, i, clockwise);
 
@@ -199,42 +184,42 @@ void UWall_Cutter::cutWall() {
 	}
 }
 
-Polygon UWall_Cutter::walkLoop(TArray<Polygon::Vertex> &OUT_visited, Polygon::Vertex const&  start, int indexOfVertex, int direction) {
+Polygon UWall_Cutter::walkLoop(TArray<Polygon::Vertex> &OUT_visited, Polygon::Vertex*  start, int indexOfVertex, int direction) {
 
 	Polygon loop;
 	loop.Add(start);
-	OUT_visited.Add(start);
+	OUT_visited.Add(*start);
 
 	int currentIndex = indexOfVertex;
 	bool in_cut_polygon = true;
-	Polygon::Vertex x = getNextNode(currentIndex, currentIndex, true, direction);
+	Polygon::Vertex* x = getNextNode(currentIndex, currentIndex, true, direction);
 
-	while (x.equals(start) == false){
+	while (x->equals(*start) == false){
 		loop.Add(x);
 
-		if (OUT_visited.Contains(x) && (x.type == Polygon::ENTRY || x.type == Polygon::EXIT)) {
-			UE_LOG(LogTemp, Warning, TEXT("%s vs %s"), *x.pos.ToString(), *start.pos.ToString());
-			UE_LOG(LogTemp, Error, TEXT("Infinite loop found when walking loop! %s vs %s"), *x.pos.ToString(), *start.pos.ToString());
+		if (OUT_visited.Contains(*x) && (x->type == Polygon::ENTRY || x->type == Polygon::EXIT)) {
+			UE_LOG(LogTemp, Warning, TEXT("%s vs %s"), *x->pos.ToString(), *start->pos.ToString());
+			UE_LOG(LogTemp, Error, TEXT("Infinite loop found when walking loop! %s vs %s"), *x->pos.ToString(), *start->pos.ToString());
 			return loop;
 		}
 
-		OUT_visited.Add(x);
+		OUT_visited.Add(*x);
 
-		if (x.intercept_index != -1 && (x.type == Polygon::ENTRY || x.type == Polygon::EXIT)) {
+		if (x->intercept_index != -1 && (x->type == Polygon::ENTRY || x->type == Polygon::EXIT)) {
 
-			currentIndex = x.intercept_index;
+			currentIndex = x->intercept_index;
 
 			if (in_cut_polygon) {
 				int trash;
-				Polygon::Vertex firstStepClockwise = getNextNode(trash, x.intercept_index, false, 1);
+				Polygon::Vertex* firstStepClockwise = getNextNode(trash, x->intercept_index, false, 1);
 
-				if (cut_polygon.pointInsidePolygon(firstStepClockwise.pos)) {
+				if (cut_polygon.pointInsidePolygon(firstStepClockwise->pos)) {
 					direction = -1;
 				}
-				x = *wall_polygon.getVertex(currentIndex);
+				x = wall_polygon.getVertex(currentIndex);
 			}
 			else {
-				x = *cut_polygon.getVertex(currentIndex);
+				x = cut_polygon.getVertex(currentIndex);
 			}
 
 			in_cut_polygon = !in_cut_polygon;
@@ -246,15 +231,23 @@ Polygon UWall_Cutter::walkLoop(TArray<Polygon::Vertex> &OUT_visited, Polygon::Ve
 	return loop;
 }
 
+int mod(int a, int b) {
+	int remainder = a % b;
+	if (remainder < 0) {
+		remainder += b;
+	}
+	return remainder;
+}
 
-Polygon::Vertex UWall_Cutter::getNextNode(int& OUT_new_index, int currentIndex, bool in_cut_polygon, int direction) {
+
+Polygon::Vertex* UWall_Cutter::getNextNode(int& OUT_new_index, int currentIndex, bool in_cut_polygon, int direction) {
 
 	if (in_cut_polygon) {
-		OUT_new_index = (currentIndex + 1) % cut_polygon.Num();
-		return *cut_polygon.getVertex(OUT_new_index);
+		OUT_new_index = mod((currentIndex + 1), (cut_polygon.Num()));
+		return cut_polygon.getVertex(OUT_new_index);
 	} else {
-		OUT_new_index = (currentIndex + direction) % wall_polygon.Num();
-		return *wall_polygon.getVertex(OUT_new_index);
+		OUT_new_index = mod((currentIndex + direction), (wall_polygon.Num()));
+		return wall_polygon.getVertex(OUT_new_index);
 	}
 
 }
