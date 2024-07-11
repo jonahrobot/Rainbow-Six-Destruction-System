@@ -41,40 +41,79 @@ bool Polygon::pointInsidePolygon(FVector2D const& point) const{
 	return overlaps % 2 == 1;
 }
 
-Polygon::Vertex* Polygon::getVertex(int index){
-	return &vertices[index];
-}
-
-Polygon::Vertex const Polygon::getVertexConst(int index) const{
-	return vertices[index];
-}
-
 int Polygon::Num() const{
-	return vertices.Num();
+	return size;
 }
 
-int Polygon::Insert(Vertex* x, int index) {
-	return vertices.Insert(*x, index);
+void Polygon::Insert(Vertex* x, Vertex* nodeBeforex){
+
+	if (x == nullptr || nodeBeforex == nullptr) return;
+
+	if (nodeBeforex == TailNode) {
+		Add(x);
+	}
+	else {
+		// Insert new node
+
+		// Hook up new node
+		x->PrevNode = nodeBeforex;
+		x->NextNode = nodeBeforex->NextNode;
+
+		// Hook up neighbors
+		nodeBeforex->NextNode = x;
+		x->NextNode->PrevNode = x;
+	}
+
+	size++;
 }
 
+// Append to end
 void Polygon::Add(Vertex* x) {
 
-	Vertex* Head = nullptr;
-	Vertex* Tail = nullptr;
-	int size = 0;
+	if (x == nullptr) return;
 
-	vertices.Add(*x);
+	if (size == 0) {
+		HeadNode = TailNode = x;
+	}
+	else {
+		// Add new Tail
+
+		// Hook up new node
+		x->NextNode = HeadNode;
+		x->PrevNode = TailNode;
+
+		// Connect neighbors
+		TailNode->NextNode = x;
+		HeadNode->PrevNode = x;
+
+		// Change Tail
+		TailNode = x;
+	}
+
+	size++;
 }
 
 void Polygon::Empty() {
-	vertices.Empty();
-}
 
-bool Polygon::IsValidIndex(int index) const{
-	return vertices.IsValidIndex(index);
+	if (size == 0) return;
+
+	Vertex* Current = HeadNode;
+	Vertex* EndTarget = TailNode;
+
+	while (Current != EndTarget)
+	{
+		Vertex* DeleteNode = Current;
+		Current = Current->NextNode;
+		delete DeleteNode;
+	}
+
+	// Handle Tail node
+	delete TailNode;
+
+	HeadNode = TailNode = nullptr;
+	size = 0;
 }
 
 bool Polygon::IsEmpty() const{
-	return vertices.IsEmpty();
-	
+	return size == 0;
 }
