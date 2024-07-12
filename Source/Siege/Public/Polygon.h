@@ -16,7 +16,7 @@ public:
         bool visited = false;
 
         // Marks where W-A (Weiler-Atherton) Algorithm goes for intercepts
-        int intercept_index = -1;
+        Vertex* intercept_link = nullptr;
 
         bool compareAproxPos(FVector2D A, FVector2D B) const {
             return (std::roundf(A.X) == std::roundf(B.X) &&
@@ -50,7 +50,8 @@ public:
         Vertex* CurrentNode = target.HeadNode;
 
         do{
-            Add(CurrentNode);
+      
+            Add(new Vertex(CurrentNode->pos, CurrentNode->type));
             CurrentNode = CurrentNode->NextNode;
 
         } while (CurrentNode != target.HeadNode);
@@ -66,7 +67,7 @@ public:
         Vertex* CurrentNode = target.HeadNode;
 
         do {
-            Add(CurrentNode);
+            Add(new Vertex(CurrentNode->pos, CurrentNode->type));
             CurrentNode = CurrentNode->NextNode;
 
         } while (CurrentNode != target.HeadNode);

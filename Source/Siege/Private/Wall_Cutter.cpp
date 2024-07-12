@@ -95,58 +95,51 @@ void UWall_Cutter::cutWall() {
 	// Find intersections between the two polygons
 	// Then add them to the new wall_polygon and cut_polygon
 
-	Polygon wall_polygon_saved = wall_polygon;
-	Polygon cut_polygon_saved = cut_polygon;
-
 	int total_added_to_wall = 0;
 	int total_added_to_cut = 0;
 
-	for (int x = 0; x < wall_polygon_saved.Num(); x++) {
-		for (int y = 0; y < cut_polygon_saved.Num(); y++) {
+	Polygon::Vertex* wall_vertex = wall_polygon.HeadNode;
+	Polygon::Vertex* cut_vertex = cut_polygon.HeadNode;
+	
+
+	while(wall_vertex->NextNode != wall_polygon.HeadNode){
+
+		while (cut_vertex->NextNode != cut_polygon.HeadNode) {
+
 
 			// Find current edge for wall_polygon
-			FVector2D a_start = wall_polygon_saved.getVertex(x)->pos;
-			FVector2D a_end = wall_polygon_saved.getVertex((x + 1) % wall_polygon_saved.Num())->pos;
-			MathLib::EDGE a = { a_start, a_end };
+			MathLib::EDGE a = { wall_vertex->pos, wall_vertex->NextNode->pos };
 
 			// Find current edge for cut_polygon
-			FVector2D b_start = cut_polygon_saved.getVertex(y)->pos;
-			FVector2D b_end = cut_polygon_saved.getVertex((y + 1) % cut_polygon_saved.Num())->pos;
-			MathLib::EDGE b = { b_start, b_end };
+			MathLib::EDGE b = { cut_vertex->pos, cut_vertex->NextNode->pos };
 
 			FVector2D out;
 			bool found_intersept = MathLib::Find_Intersection(out, a, b);
 
-			if (!found_intersept) continue;
+			if (!found_intersept) {
+				cut_vertex = cut_vertex->NextNode;
+				continue;
+			}
 
 			// If intercept found -
 
-			Polygon::InterceptTypes intercept_type = getInterceptType(out, b_end);
+			Polygon::InterceptTypes intercept_type = getInterceptType(out, b.end);
 
 			Polygon::Vertex* add_to_wall = new Polygon::Vertex(out,intercept_type);
 			Polygon::Vertex* add_to_cut = new Polygon::Vertex(out, intercept_type);
 
 			// Create intercept link (ENTRY links in wall_polygon) (EXIT links in cut_polygon)
+			if(intercept_type == Polygon::ENTRY) add_to_wall->intercept_link = add_to_cut;
+			if (intercept_type == Polygon::EXIT) add_to_cut->intercept_link = add_to_wall;
 
 			// Add intercept to each polygon
+			wall_polygon.Insert(add_to_wall, wall_vertex);
+			cut_polygon.Insert(add_to_cut, cut_vertex);
 
-			int indexWall = wall_polygon.Insert(add_to_wall, x + 1 + total_added_to_wall);
-			total_added_to_wall++;
-			int indexCut = cut_polygon.Insert(add_to_cut, y + 1 + total_added_to_cut);
-			total_added_to_cut++;
-
-			// Link up!
-
-			// (ENTRY links wall_polygon -> cut_polygon) 
-			if (intercept_type == Polygon::ENTRY) {
-				wall_polygon.getVertex(x + total_added_to_wall)->intercept_index = y + total_added_to_cut;
-			}
-
-			// (EXIT links cut_polygon -> wall_polygon) 
-			if (intercept_type == Polygon::EXIT) {
-				cut_polygon.getVertex(y + total_added_to_cut)->intercept_index = x + total_added_to_wall;
-			}
+			cut_vertex = cut_vertex->NextNode;
+			cut_vertex = cut_vertex->NextNode;
 		}
+		wall_vertex = wall_vertex->NextNode;
 	}
 
 	// At this point we have a wall_polygon and cut_polygon, with intercepts in correct order, pointed and labeled!
@@ -159,40 +152,28 @@ void UWall_Cutter::cutWall() {
 	int clockwise = 1;
 
 	// Find Direction
-	for (int i = 0; i < cut_polygon.Num(); i++) {
-		Polygon::Vertex* x = cut_polygon.getVertex(i);
-		if (visited.Contains(*x) == false && x->type == Polygon::EXIT) {
-			int trash;
-			Polygon::Vertex* firstStepClockwise = getNextNode(trash, x->intercept_index, false, 1);
 
-			if (cut_polygon.pointInsidePolygon(firstStepClockwise->pos)) {
-				clockwise = -1;
-			}
-			break;
-		}
-	}
+	Polygon::Vertex* currentVertex = cut_polygon.HeadNode;
 
-	for (int i = 0; i < cut_polygon.Num(); i++) {
-		Polygon::Vertex* x = cut_polygon.getVertex(i);
+	while (currentVertex->NextNode != cut_polygon.HeadNode) {
 
-		if (visited.Contains(*x) == false && x->type == Polygon::ENTRY) {
+		if (visited.Contains(*currentVertex) == false && currentVertex->type == Polygon::ENTRY) {
 
-			Polygon new_region = walkLoop(visited, x, i, clockwise);
+			Polygon new_region = walkLoop(visited, currentVertex, clockwise);
 
 			regions.Add(new_region);
 		}
 	}
 }
 
-Polygon UWall_Cutter::walkLoop(TArray<Polygon::Vertex> &OUT_visited, Polygon::Vertex*  start, int indexOfVertex, int direction) {
+Polygon UWall_Cutter::walkLoop(TArray<Polygon::Vertex> &OUT_visited, Polygon::Vertex*  start, int direction) {
 
 	Polygon loop;
 	loop.Add(start);
 	OUT_visited.Add(*start);
 
-	int currentIndex = indexOfVertex;
 	bool in_cut_polygon = true;
-	Polygon::Vertex* x = getNextNode(currentIndex, currentIndex, true, direction);
+	Polygon::Vertex* x = start->NextNode;
 
 	while (x->equals(*start) == false){
 		loop.Add(x);
@@ -205,49 +186,25 @@ Polygon UWall_Cutter::walkLoop(TArray<Polygon::Vertex> &OUT_visited, Polygon::Ve
 
 		OUT_visited.Add(*x);
 
-		if (x->intercept_index != -1 && (x->type == Polygon::ENTRY || x->type == Polygon::EXIT)) {
+		if (x->intercept_link != nullptr && (x->type == Polygon::ENTRY || x->type == Polygon::EXIT)) {
 
-			currentIndex = x->intercept_index;
+			x = x->intercept_link;
 
 			if (in_cut_polygon) {
-				int trash;
-				Polygon::Vertex* firstStepClockwise = getNextNode(trash, x->intercept_index, false, 1);
-
-				if (cut_polygon.pointInsidePolygon(firstStepClockwise->pos)) {
+				if (cut_polygon.pointInsidePolygon(x->NextNode->pos)) {
 					direction = -1;
 				}
-				x = wall_polygon.getVertex(currentIndex);
-			}
-			else {
-				x = cut_polygon.getVertex(currentIndex);
 			}
 
 			in_cut_polygon = !in_cut_polygon;
 		}
-
-		x = getNextNode(currentIndex, currentIndex, in_cut_polygon, direction);
+		if (direction == -1) {
+			x = x->PrevNode;
+		}
+		else {
+			x = x->NextNode;
+		}
 	}
 
 	return loop;
-}
-
-int mod(int a, int b) {
-	int remainder = a % b;
-	if (remainder < 0) {
-		remainder += b;
-	}
-	return remainder;
-}
-
-
-Polygon::Vertex* UWall_Cutter::getNextNode(int& OUT_new_index, int currentIndex, bool in_cut_polygon, int direction) {
-
-	if (in_cut_polygon) {
-		OUT_new_index = mod((currentIndex + 1), (cut_polygon.Num()));
-		return cut_polygon.getVertex(OUT_new_index);
-	} else {
-		OUT_new_index = mod((currentIndex + direction), (wall_polygon.Num()));
-		return wall_polygon.getVertex(OUT_new_index);
-	}
-
 }

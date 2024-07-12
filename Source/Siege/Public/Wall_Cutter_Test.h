@@ -39,11 +39,9 @@ private:
 	FVector origin;
 	FRotator rotation;
 	FVector scale;
-
-	int step_through_x = 0;
-	int step_through_y = 0;
-
-	void Step(float x, float y);
+	
+	Polygon::Vertex* currentX;
+	Polygon::Vertex* currentY;
 
 	void debug_print_polygon(Polygon poly, Polygon otherPoly, FString name, Polygon::InterceptTypes checkType);
 
