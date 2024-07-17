@@ -26,7 +26,6 @@ private:
 
 	void Draw_Wall_Intercepts();
 
-
 	void Step_Up();
 	void Step_Down();
 	void Step_Left();

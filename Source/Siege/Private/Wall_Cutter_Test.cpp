@@ -40,20 +40,47 @@ void UWall_Cutter_Test::BeginPlay()
 	currentY = cutter->cut_polygon.HeadNode;
 }
 
-
 void UWall_Cutter_Test::Step_Up() {
+	if (currentY == nullptr || currentX == nullptr) {
+		currentX = cutter->wall_polygon.HeadNode;
+		currentY = cutter->cut_polygon.HeadNode;
+	}
+
+	if (currentY == nullptr || currentX == nullptr) return;
+
 	currentY = currentY->NextNode;
 	Step_Through_Draw();
 }
 void UWall_Cutter_Test::Step_Down() {
+	if (currentY == nullptr || currentX == nullptr) {
+		currentX = cutter->wall_polygon.HeadNode;
+		currentY = cutter->cut_polygon.HeadNode;
+	}
+
+	if (currentY == nullptr || currentX == nullptr) return;
+
 	currentY = currentY->PrevNode;
 	Step_Through_Draw();
 }
 void UWall_Cutter_Test::Step_Left() {
+	if (currentY == nullptr || currentX == nullptr) {
+		currentX = cutter->wall_polygon.HeadNode;
+		currentY = cutter->cut_polygon.HeadNode;
+	}
+
+	if (currentY == nullptr || currentX == nullptr) return;
+
 	currentX = currentX->PrevNode;
 	Step_Through_Draw();
 }
 void UWall_Cutter_Test::Step_Right() {
+	if (currentY == nullptr || currentX == nullptr) {
+		currentX = cutter->wall_polygon.HeadNode;
+		currentY = cutter->cut_polygon.HeadNode;
+	}
+
+	if (currentY == nullptr || currentX == nullptr) return;
+
 	currentX = currentX->NextNode;
 	Step_Through_Draw();
 }
@@ -80,7 +107,7 @@ void UWall_Cutter_Test::Draw_Polygon(Polygon poly, FString nameOfDraw, bool draw
 
 	int index = 0;
 	Polygon::Vertex* currentVertex = poly.HeadNode;
-	while(currentVertex->NextNode != poly.HeadNode){
+	do{
 	
 		FVector globalVertexPos = MathLib::LocalToGlobal(currentVertex->pos, origin, rotation, scale.X);
 
@@ -111,7 +138,9 @@ void UWall_Cutter_Test::Draw_Polygon(Polygon poly, FString nameOfDraw, bool draw
 		index++;
 
 		DrawDebugString(GetWorld(), indexTextPos, indexText, GetOwner(), FColor::Blue, -1.f, false, 2.0f);
-	}
+
+		currentVertex = currentVertex->NextNode;
+	}while(currentVertex != poly.HeadNode);
 }
 
 
@@ -125,7 +154,7 @@ void UWall_Cutter_Test::Draw_Cut_Poly() {
 }
 
 void UWall_Cutter_Test::Draw_Wall_Intercepts() {
-	Draw_Polygon(cutter->wall_polygon, "Wall Polygon: Intercepts",true);
+	Draw_Polygon(cutter->cut_polygon, "Wall Polygon: Intercepts",true);
 }
 
 void UWall_Cutter_Test::Draw_Shrapnel() {
@@ -215,6 +244,8 @@ void UWall_Cutter_Test::debug_print_polygon(Polygon poly, Polygon otherPoly, FSt
 		}
 
 		out += ", ";
+
+		x = x->NextNode;
 	}
 
 	out.RemoveFromEnd(", ");

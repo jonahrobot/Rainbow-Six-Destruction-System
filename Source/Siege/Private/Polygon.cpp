@@ -14,12 +14,14 @@ bool Polygon::pointInsidePolygon(FVector2D const& point) const{
 	// https://www.youtube.com/watch?v=RSXM9bgqxJM&list=LL&index=1
 
 	int overlaps = 0;
+	
+	Vertex* currentVertex = HeadNode;
 
-	for (int x = 0; x < Num(); x++) {
+	while(currentVertex->NextNode != HeadNode){
 
 		// Find current edge for wall_polygon
-		FVector2D a_start = vertices[x].pos;
-		FVector2D a_end = vertices[(x + 1) % Num()].pos;
+		FVector2D a_start = currentVertex->pos;
+		FVector2D a_end = currentVertex->NextNode->pos;
 
 		float x1 = a_start.X;
 		float y1 = a_start.Y;
@@ -32,6 +34,8 @@ bool Polygon::pointInsidePolygon(FVector2D const& point) const{
 				overlaps += 1;
 			}
 		}
+
+		currentVertex = currentVertex->NextNode;
 	}
 
 	return overlaps % 2 == 1;

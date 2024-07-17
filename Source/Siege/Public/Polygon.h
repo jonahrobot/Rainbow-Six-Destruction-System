@@ -34,6 +34,37 @@ public:
         Vertex(FVector2D pos, InterceptTypes type) : pos(pos), type(type), NextNode(nullptr), PrevNode(nullptr) { }
     };
 
+    class PolygonIterator {
+    public:
+        PolygonIterator(Vertex* ptr, int loopTimes, Vertex* HeadNode) : currentVertex(ptr), loopTimes(loopTimes), HeadNode(HeadNode) {}
+
+        PolygonIterator& operator++() {
+            currentVertex = currentVertex->NextNode;
+            if (currentVertex == HeadNode) {
+                loopTimes += 1;
+            }
+            return *this;
+        }
+
+        Vertex& operator*() {
+            return *currentVertex;
+        }
+
+        bool operator==(const PolygonIterator& other) const {
+            return currentVertex == other.currentVertex && loopTimes == other.loopTimes;
+        }
+
+        bool operator!=(const PolygonIterator& other) const {
+            return !(currentVertex == other.currentVertex && loopTimes == other.loopTimes);
+        }
+
+    private:
+        Vertex* currentVertex;
+        int loopTimes;
+        Vertex* HeadNode;
+    };
+    
+private:
     Vertex* HeadNode;
     Vertex* TailNode;
     int size;
@@ -46,6 +77,10 @@ public:
     {
         // Copy Constructor
         if (target.size == 0) return;
+
+        HeadNode = nullptr;
+        TailNode = nullptr;
+        size = 0;
 
         Vertex* CurrentNode = target.HeadNode;
 
@@ -88,7 +123,13 @@ public:
 
     bool IsEmpty() const; 
 
-private:
-    TArray<Vertex> vertices; 
+    PolygonIterator begin() {
+        return PolygonIterator(HeadNode,0,HeadNode);
+    }
 
+    PolygonIterator end() {
+        return PolygonIterator(TailNode,1,HeadNode);
+    }
+
+    friend class UWall_Cutter_Test;
 };

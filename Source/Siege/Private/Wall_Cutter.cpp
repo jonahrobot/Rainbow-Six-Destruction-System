@@ -39,6 +39,11 @@ void UWall_Cutter::BeginPlay()
 	start_wall_polygon.Add(new Polygon::Vertex(FVector2D(-actor_scale.Y, actor_scale.Z),Polygon::NONE));
 	start_wall_polygon.Add(new Polygon::Vertex(FVector2D(-actor_scale.Y, -actor_scale.Z),Polygon::NONE));
 	start_wall_polygon.Add(new Polygon::Vertex(FVector2D(actor_scale.Y, -actor_scale.Z),Polygon::NONE));
+
+	start_cut_polygon.Add(new Polygon::Vertex(FVector2D(actor_scale.Y + 20, -actor_scale.Z - 20), Polygon::NONE));
+	start_cut_polygon.Add(new Polygon::Vertex(FVector2D(actor_scale.Y + 20, 0), Polygon::NONE));
+	start_cut_polygon.Add(new Polygon::Vertex(FVector2D(0, 0), Polygon::NONE));
+	start_cut_polygon.Add(new Polygon::Vertex(FVector2D(0, -actor_scale.Z - 20), Polygon::NONE));
 }
 
 #pragma endregion Setup
@@ -46,7 +51,7 @@ void UWall_Cutter::BeginPlay()
 #pragma region Helper Methods
 
 void UWall_Cutter::addCutPoint(FVector2D const& PointToAdd) {
-	start_cut_polygon.Add(new Polygon::Vertex(PointToAdd, Polygon::NONE));
+	//start_cut_polygon.Add(new Polygon::Vertex(PointToAdd, Polygon::NONE));
 }
 
 
@@ -83,6 +88,9 @@ Polygon::InterceptTypes UWall_Cutter::getInterceptType(FVector2D const& intercep
  */
 void UWall_Cutter::cutWall() {
 
+
+	if (start_cut_polygon.Num() <= 2) return;
+	UE_LOG(LogTemp, Warning, TEXT("Started Cut"));
 	// Follows Weiler-Atherton polygon clipping algorithm
 
 	// Create polygon lists
@@ -95,29 +103,24 @@ void UWall_Cutter::cutWall() {
 	// Find intersections between the two polygons
 	// Then add them to the new wall_polygon and cut_polygon
 
-	int total_added_to_wall = 0;
-	int total_added_to_cut = 0;
+	for(Polygon::Vertex& wall_vertex : wall_polygon){
 
-	Polygon::Vertex* wall_vertex = wall_polygon.HeadNode;
-	Polygon::Vertex* cut_vertex = cut_polygon.HeadNode;
-	
+		if (wall_vertex.type != Polygon::NONE) continue;
 
-	while(wall_vertex->NextNode != wall_polygon.HeadNode){
+		for (Polygon::Vertex& cut_vertex : cut_polygon) {
 
-		while (cut_vertex->NextNode != cut_polygon.HeadNode) {
-
+			if (cut_vertex.type != Polygon::NONE) continue;
 
 			// Find current edge for wall_polygon
-			MathLib::EDGE a = { wall_vertex->pos, wall_vertex->NextNode->pos };
+			MathLib::EDGE a = { wall_vertex.pos, wall_vertex.NextNode->pos };
 
 			// Find current edge for cut_polygon
-			MathLib::EDGE b = { cut_vertex->pos, cut_vertex->NextNode->pos };
+			MathLib::EDGE b = { cut_vertex.pos, cut_vertex.NextNode->pos };
 
 			FVector2D out;
 			bool found_intersept = MathLib::Find_Intersection(out, a, b);
 
 			if (!found_intersept) {
-				cut_vertex = cut_vertex->NextNode;
 				continue;
 			}
 
@@ -133,13 +136,9 @@ void UWall_Cutter::cutWall() {
 			if (intercept_type == Polygon::EXIT) add_to_cut->intercept_link = add_to_wall;
 
 			// Add intercept to each polygon
-			wall_polygon.Insert(add_to_wall, wall_vertex);
-			cut_polygon.Insert(add_to_cut, cut_vertex);
-
-			cut_vertex = cut_vertex->NextNode;
-			cut_vertex = cut_vertex->NextNode;
+			wall_polygon.Insert(add_to_wall, &wall_vertex);
+			cut_polygon.Insert(add_to_cut, &cut_vertex);
 		}
-		wall_vertex = wall_vertex->NextNode;
 	}
 
 	// At this point we have a wall_polygon and cut_polygon, with intercepts in correct order, pointed and labeled!
@@ -153,13 +152,12 @@ void UWall_Cutter::cutWall() {
 
 	// Find Direction
 
-	Polygon::Vertex* currentVertex = cut_polygon.HeadNode;
 
-	while (currentVertex->NextNode != cut_polygon.HeadNode) {
+	for (Polygon::Vertex& current_vertex : cut_polygon) {
 
-		if (visited.Contains(*currentVertex) == false && currentVertex->type == Polygon::ENTRY) {
+		if (visited.Contains(current_vertex) == false && current_vertex.type == Polygon::ENTRY) {
 
-			Polygon new_region = walkLoop(visited, currentVertex, clockwise);
+			Polygon new_region = walkLoop(visited, &current_vertex, clockwise);
 
 			regions.Add(new_region);
 		}
