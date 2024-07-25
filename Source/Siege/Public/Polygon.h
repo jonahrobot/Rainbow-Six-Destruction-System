@@ -31,6 +31,10 @@ public:
             return (compareAproxPos(pos, other.pos) && type == other.type);
         }
 
+        bool operator!=(const Vertex& other) const {
+            return !(compareAproxPos(pos, other.pos) && type == other.type);
+        }
+
         Vertex(FVector2D pos, InterceptTypes type) : pos(pos), type(type), NextNode(nullptr), PrevNode(nullptr) { }
     };
 
@@ -46,6 +50,15 @@ public:
             return *this;
         }
 
+        PolygonIterator& operator++(int) {
+            currentVertex = currentVertex->NextNode;
+            if (currentVertex == HeadNode) {
+                loopTimes += 1;
+            }
+            return *this;
+        }
+
+
         Vertex& operator*() {
             return *currentVertex;
         }
@@ -56,6 +69,10 @@ public:
 
         bool operator!=(const PolygonIterator& other) const {
             return !(currentVertex == other.currentVertex && loopTimes == other.loopTimes);
+        }
+
+        int getLoopCount() const {
+            return loopTimes;
         }
 
     private:
@@ -110,7 +127,30 @@ public:
         return *this;
     }
 
-   
+    bool operator==(const Polygon& target) const
+    {
+        Vertex* vertexA = HeadNode;
+        Vertex* vertexB = target.HeadNode;
+
+        if (Num() != target.Num()) return false;
+
+        do {
+
+            if (vertexA != vertexB) return false;
+
+            vertexA = vertexA->NextNode;
+            vertexB = vertexB->NextNode;
+
+        } while (vertexA->NextNode != HeadNode);
+
+        return true;
+    }
+
+    bool operator!=(const Polygon& target) const
+    {
+        return !operator==(target);
+    }
+
     bool pointInsidePolygon(FVector2D const& point) const;
 
     int Num() const;
@@ -132,4 +172,6 @@ public:
     }
 
     friend class UWall_Cutter_Test;
+    friend class TestAdd;
+    friend class TestInsert;
 };
