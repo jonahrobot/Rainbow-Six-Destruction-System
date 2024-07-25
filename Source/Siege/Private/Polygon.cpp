@@ -8,6 +8,20 @@ Polygon::~Polygon()
 	Empty();
 }
 
+void Polygon::printPolygon() const{
+	Vertex* currentVertex = HeadNode;
+	FString out;
+
+	out.AppendInt(Num());
+
+	do{
+		out += currentVertex->ToString() + "<->";
+		currentVertex = currentVertex->NextNode;
+	} while (currentVertex != HeadNode);
+
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *out);
+}
+
 bool Polygon::pointInsidePolygon(FVector2D const& point) const{
 
 	// Follows algorithm presented below, finds it point is inside polygon
@@ -62,9 +76,9 @@ void Polygon::Insert(Vertex* x, Vertex* nodeBeforex){
 		// Hook up neighbors
 		nodeBeforex->NextNode = x;
 		x->NextNode->PrevNode = x;
-	}
 
-	size++;
+		size++;
+	}
 }
 
 // Append to end

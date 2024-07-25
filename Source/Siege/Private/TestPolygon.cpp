@@ -11,14 +11,23 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(Vertex_TestEquals, "Polygon.VertexTestEquals", 
 
 bool Vertex_TestEquals::RunTest(const FString& Parameters) {
 
-	Polygon::Vertex v1 = Polygon::Vertex(FVector2D(2, 3), Polygon::ENTRY);
-	Polygon::Vertex v2 = Polygon::Vertex(FVector2D(2.1, 3.1), Polygon::ENTRY);
+	Polygon::Vertex v1 = Polygon::Vertex(FVector2D(2, 3), Polygon::NONE);
+	Polygon::Vertex v2 = Polygon::Vertex(FVector2D(2.1, 3.1), Polygon::NONE);
+	Polygon::Vertex v3 = Polygon::Vertex(FVector2D(2, 3), Polygon::ENTRY);
 
+	TestTrue("Test Vertices Equals", v1 == v1);
 	TestTrue("Test Vertices Equals", v1.equals(v2));
+	TestTrue("Test Vertices Equals", v1 == v2);
 	
 	v2.pos = FVector2D(2.6, 3.9);
 
 	TestFalse("Test Vertices Don't Equal", v1.equals(v2));
+
+	TestFalse("Test Vertices Don't Equal", v1.equals(v3));
+
+	FVector2D x = FVector2D(2, 1);
+
+	TestTrue("Test compareAproxPos", Polygon::Vertex::compareAproxPos(x, x));
 
 	return true;
 }
@@ -53,7 +62,7 @@ bool Iterator_CheckIterator::RunTest(const FString& Parameters) {
 	TestEqual("Iterator: Check Loop Count", itr.getLoopCount(), 1);
 
 	Polygon::PolygonIterator itrB = p1.begin();
-	itrB++; itrB++; itrB++; itrB++;
+	itrB++; itrB++; itrB++;
 
 	TestTrue("Iterator: Check itr equals", itr == itrB);
 

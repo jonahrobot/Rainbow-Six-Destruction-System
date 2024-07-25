@@ -18,7 +18,7 @@ public:
         // Marks where W-A (Weiler-Atherton) Algorithm goes for intercepts
         Vertex* intercept_link = nullptr;
 
-        bool compareAproxPos(FVector2D A, FVector2D B) const {
+        bool static compareAproxPos(FVector2D A, FVector2D B) {
             return (std::roundf(A.X) == std::roundf(B.X) &&
                 std::roundf(A.Y) == std::roundf(B.Y));
         }
@@ -33,6 +33,19 @@ public:
 
         bool operator!=(const Vertex& other) const {
             return !(compareAproxPos(pos, other.pos) && type == other.type);
+        }
+
+        FString ToString() const {
+            switch (type) {
+            case NONE:
+                return "[ " + pos.ToString() + ", NONE]";
+            case ENTRY:
+                return "[" + pos.ToString() + ", ENTRY]";
+            case EXIT:
+                return "[" + pos.ToString() + ", EXIT]";
+            }
+
+            return "[" + pos.ToString() + "]";
         }
 
         Vertex(FVector2D pos, InterceptTypes type) : pos(pos), type(type), NextNode(nullptr), PrevNode(nullptr) { }
@@ -90,6 +103,8 @@ public:
     Polygon() : HeadNode(nullptr), TailNode(nullptr), size(0) {};
 	~Polygon();
 
+    void printPolygon() const;
+
     Polygon(const Polygon& target)
     {
         // Copy Constructor
@@ -132,16 +147,20 @@ public:
         Vertex* vertexA = HeadNode;
         Vertex* vertexB = target.HeadNode;
 
-        if (Num() != target.Num()) return false;
+        if (Num() != target.Num()) {
+            return false;
+        }
 
         do {
 
-            if (vertexA != vertexB) return false;
+            if (*vertexA != *vertexB) {
+                return false;
+            }
 
             vertexA = vertexA->NextNode;
             vertexB = vertexB->NextNode;
 
-        } while (vertexA->NextNode != HeadNode);
+        } while (vertexA != HeadNode);
 
         return true;
     }
