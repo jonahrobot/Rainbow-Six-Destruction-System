@@ -74,6 +74,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestAdd, "Polygon.TestAdd", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestCopyConstructor, "Polygon.TestCopyConstructor", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestInsert, "Polygon.TestInsert", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestEmpty, "Polygon.TestEmpty", TEST_FLAGS)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestUniqueData, "Polygon.TestUniqueData", TEST_FLAGS)
 
 bool TestAdd::RunTest(const FString& Parameters) {
 
@@ -163,12 +164,66 @@ bool TestEmpty::RunTest(const FString& Parameters) {
 
 	Polygon::Vertex* v1 = new Polygon::Vertex(FVector2D(1, 2), Polygon::NONE);
 	Polygon::Vertex* v2 = new Polygon::Vertex(FVector2D(2, 0), Polygon::NONE);
+
+	/*
+	
+	Best use case
+
+	- Creating vertex, adding to polygon, refrenceing vertex later
+
+	Public access to vertex is critical, wrapper could be used for vertex usage like Unreal
+	Wrapper not public avalible. 
+
+	Vertex v = Vertex(FVector2D(2,2), NONE); // Will be deleted once out of scope!
+
+	Polygon p1 = Polygon();
+
+	p1.Add(v); // Adds copy of v into polygon.
+
+
+	doing (v->pos = new value) is invalid as v is not referencing the correct node
+	To inforce this behavior we can either make those values const or private and have specific getters only friends can modify
+
+
+	Polygons in use case should be add to and editable!
+	
+	*/
+
+	
 	p1.Add(v1);
 	p1.Add(v2);
 
 	p1.Empty();
 
 	TestEqual("Polygon: Check empty", p1.Num(),0);
+
+	return true;
+}
+
+bool TestUniqueData::RunTest(const FString& Parameters) {
+
+	Polygon p1 = Polygon();
+	Polygon p2 = Polygon();
+
+	Polygon::Vertex* v1 = new Polygon::Vertex(FVector2D(0, 0), Polygon::NONE);
+
+	p1.Add(v1);
+	p2.Add(v1);
+
+	// If we modify v1 shouldn't modify p1 or p2s v1
+	// If we modify v1 in p1 shouldn't modify p1
+
+	Polygon::Vertex* h1 = p1.HeadNode;
+	Polygon::Vertex* h2 = p2.HeadNode;
+
+	h1->pos = FVector2D(1, 1);
+
+	TestEqual("Polygon: Test no linking data across polygons", h2->pos, FVector2D(0,0));
+
+	v1->pos = FVector2D(-1, -1);
+
+	TestEqual("Polygon: Test no data updates from source", h1->pos, FVector2D(1, 1));
+	TestEqual("Polygon: Test no data updates from source", h2->pos, FVector2D(0, 0)); 
 
 	return true;
 }

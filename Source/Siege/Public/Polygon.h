@@ -13,7 +13,6 @@ public:
         InterceptTypes type;
         Vertex* NextNode;
         Vertex* PrevNode;
-        bool visited = false;
 
         // Marks where W-A (Weiler-Atherton) Algorithm goes for intercepts
         Vertex* intercept_link = nullptr;
@@ -48,6 +47,7 @@ public:
             return "[" + pos.ToString() + "]";
         }
 
+    public:
         Vertex(FVector2D pos, InterceptTypes type) : pos(pos), type(type), NextNode(nullptr), PrevNode(nullptr) { }
     };
 
@@ -193,4 +193,5 @@ public:
     friend class UWall_Cutter_Test;
     friend class TestAdd;
     friend class TestInsert;
+    friend class TestUniqueData;
 };
