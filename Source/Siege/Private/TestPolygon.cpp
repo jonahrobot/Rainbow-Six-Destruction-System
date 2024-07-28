@@ -11,23 +11,22 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(Vertex_TestEquals, "Polygon.VertexTestEquals", 
 
 bool Vertex_TestEquals::RunTest(const FString& Parameters) {
 
-	Polygon::Vertex v1 = Polygon::Vertex(FVector2D(2, 3), Polygon::NONE);
-	Polygon::Vertex v2 = Polygon::Vertex(FVector2D(2.1, 3.1), Polygon::NONE);
-	Polygon::Vertex v3 = Polygon::Vertex(FVector2D(2, 3), Polygon::ENTRY);
+	Polygon::VertexData v1 = { FVector2D(2, 3) };
+	Polygon::VertexData v2 = { FVector2D(2.1, 3.1) };
+	Polygon::VertexData v3 = { FVector2D(2, 3), Polygon::ENTRY };
 
 	TestTrue("Test Vertices Equals", v1 == v1);
-	TestTrue("Test Vertices Equals", v1.equals(v2));
 	TestTrue("Test Vertices Equals", v1 == v2);
 	
 	v2.pos = FVector2D(2.6, 3.9);
 
-	TestFalse("Test Vertices Don't Equal", v1.equals(v2));
+	TestFalse("Test Vertices Don't Equal", v1 == v2);
 
-	TestFalse("Test Vertices Don't Equal", v1.equals(v3));
+	TestFalse("Test Vertices Don't Equal", v1 == v3);
 
 	FVector2D x = FVector2D(2, 1);
 
-	TestTrue("Test compareAproxPos", Polygon::Vertex::compareAproxPos(x, x));
+	TestTrue("Test compareAproxPos", Polygon::VertexData::compareAproxPos(x, x));
 
 	return true;
 }
@@ -39,25 +38,22 @@ bool Iterator_CheckIterator::RunTest(const FString& Parameters) {
 
 	Polygon p1 = Polygon();
 
-	Polygon::Vertex* v1 = new Polygon::Vertex(FVector2D(1, 2), Polygon::NONE);
-	Polygon::Vertex* v2 = new Polygon::Vertex(FVector2D(2, 0), Polygon::NONE);
-	Polygon::Vertex* v3 = new Polygon::Vertex(FVector2D(0, 0), Polygon::NONE);
-	p1.Add(v1);
-	p1.Add(v2);
-	p1.Add(v3);
+	Polygon::Vertex* v1 = p1.Add({ FVector2D(1, 2) });
+	Polygon::Vertex* v2 = p1.Add({ FVector2D(2, 0) });
+	Polygon::Vertex* v3 = p1.Add({ FVector2D(0, 0) });
 
 	Polygon::PolygonIterator itr = p1.begin();
 
-	TestEqual("Iterator: Check Start Vertex Correct", *itr, *v1);
+	TestEqual("Iterator: Check Start Vertex Correct", **itr, *v1);
 
 	itr++;
 	itr++;
 
-	TestEqual("Iterator: Check ptr updates", *itr, *v3);
+	TestEqual("Iterator: Check ptr updates", **itr, *v3);
 
 	itr++;
 
-	TestEqual("Iterator: Check ptr loops", *itr, *v1);
+	TestEqual("Iterator: Check ptr loops", **itr, *v1);
 
 	TestEqual("Iterator: Check Loop Count", itr.getLoopCount(), 1);
 
@@ -80,22 +76,19 @@ bool TestAdd::RunTest(const FString& Parameters) {
 
 	Polygon p1 = Polygon();
 
-	Polygon::Vertex* v1 = new Polygon::Vertex(FVector2D(1, 2), Polygon::NONE);
-	Polygon::Vertex* v2 = new Polygon::Vertex(FVector2D(2, 0), Polygon::NONE);
-	Polygon::Vertex* v3 = new Polygon::Vertex(FVector2D(0, 0), Polygon::NONE);
-	p1.Add(v1);
-	p1.Add(v2);
-	p1.Add(v3);
+	Polygon::Vertex* v1 = p1.Add({ FVector2D(1, 2) });
+	Polygon::Vertex* v2 = p1.Add({ FVector2D(2, 0) });
+	Polygon::Vertex* v3 = p1.Add({ FVector2D(0, 0) });
 
 	// Ensure: [v1] <-> [v2] <-> [v3] <-> [v1]
 
-	TestEqual("Polygon: Head Node Correct", *p1.HeadNode, *v1);
-	TestEqual("Polygon: Tail Node Correct", *p1.TailNode, *v3);
+	TestEqual("Polygon: Head Node Correct", p1.HeadNode->data, v1->data);
+	TestEqual("Polygon: Tail Node Correct", p1.TailNode->data, v3->data);
 	TestEqual("Polygon: Size Correct", p1.Num(), 3);
 
-	TestTrue("Polygon: V1 Properties", v1->NextNode->equals(*v2) && v1->PrevNode->equals(*v3));
-	TestTrue("Polygon: V2 Properties", v2->NextNode->equals(*v3) && v2->PrevNode->equals(*v1));
-	TestTrue("Polygon: V3 Properties", v3->NextNode->equals(*v1) && v3->PrevNode->equals(*v2));
+	TestTrue("Polygon: V1 Properties", v1->NextNode->data == v2->data && v1->PrevNode->data == v3->data);
+	TestTrue("Polygon: V2 Properties", v2->NextNode->data == v3->data && v2->PrevNode->data == v1->data);
+	TestTrue("Polygon: V3 Properties", v3->NextNode->data == v1->data && v3->PrevNode->data == v2->data);
 
 	return true;
 }
@@ -103,28 +96,22 @@ bool TestAdd::RunTest(const FString& Parameters) {
 bool TestInsert::RunTest(const FString& Parameters) {
 
 	Polygon p1 = Polygon();
+	
+	Polygon::Vertex* v1 = p1.Add({ FVector2D(1, 2) });
+	Polygon::Vertex* v2 = p1.Add({ FVector2D(2, 0) });
+	Polygon::Vertex* v3 = p1.Insert({ FVector2D(0, 0) }, v2);
+	Polygon::Vertex* v4 = p1.Insert({ FVector2D(0, 0) }, v3);
 
-	Polygon::Vertex* v1 = new Polygon::Vertex(FVector2D(1, 2), Polygon::NONE);
-	Polygon::Vertex* v2 = new Polygon::Vertex(FVector2D(2, 0), Polygon::NONE);
-	p1.Add(v1);
-	p1.Add(v2);
+	// Ensure: [v1] <-> [v2] <-> [v3] -> [v4] <-> [v1]
 
-	Polygon::Vertex* ivA = new Polygon::Vertex(FVector2D(0, 0), Polygon::NONE);
-	Polygon::Vertex* ivB = new Polygon::Vertex(FVector2D(0, 0), Polygon::NONE);
-
-	p1.Insert(ivA, v2);
-	p1.Insert(ivB, ivA);
-
-	// Ensure: [v1] <-> [v2] <-> [ivA] -> [ivB] <-> [v1]
-
-	TestEqual("Polygon: Head Node Correct", *p1.HeadNode, *v1);
-	TestEqual("Polygon: Tail Node Correct", *p1.TailNode, *ivB);
+	TestEqual("Polygon: Head Node Correct", p1.HeadNode->data, v1->data);
+	TestEqual("Polygon: Tail Node Correct", p1.TailNode->data, v4->data);
 	TestEqual("Polygon: Size Correct", p1.Num(), 4);
 
-	TestTrue("Polygon: V1 Properties", v1->NextNode->equals(*v2) && v1->PrevNode->equals(*ivB));
-	TestTrue("Polygon: V2 Properties", v2->NextNode->equals(*ivA) && v2->PrevNode->equals(*v1));
-	TestTrue("Polygon: ivA Properties", ivA->NextNode->equals(*ivB) && ivA->PrevNode->equals(*v2));
-	TestTrue("Polygon: ivB Properties", ivB->NextNode->equals(*v1) && ivB->PrevNode->equals(*ivA));
+	TestTrue("Polygon: V1 Properties", v1->NextNode->data == v2->data && v1->PrevNode->data == v4->data);
+	TestTrue("Polygon: V2 Properties", v2->NextNode->data == v3->data && v2->PrevNode->data == v1->data);
+	TestTrue("Polygon: V3 Properties", v3->NextNode->data == v4->data && v3->PrevNode->data == v2->data);
+	TestTrue("Polygon: V4 Properties", v4->NextNode->data == v1->data && v4->PrevNode->data == v3->data);
 
 	return true;
 }
@@ -133,8 +120,8 @@ bool TestCopyConstructor::RunTest(const FString& Parameters) {
 
 	Polygon p1 = Polygon();
 
-	Polygon::Vertex* v1 = new Polygon::Vertex(FVector2D(1, 2), Polygon::NONE);
-	Polygon::Vertex* v2 = new Polygon::Vertex(FVector2D(2, 0), Polygon::NONE);
+	Polygon::VertexData v1 = { FVector2D(1, 2) };
+	Polygon::VertexData v2 = { FVector2D(2, 0) };
 	p1.Add(v1);
 	p1.Add(v2);
 
@@ -154,42 +141,12 @@ bool TestCopyConstructor::RunTest(const FString& Parameters) {
 	return true;
 }
 
-// What happens if I do
-// Vertex v1
-// p1.Add(v1) and p2.Add(v1) they would update each of their internal stuff
-// Fucking up the data structure
-
 bool TestEmpty::RunTest(const FString& Parameters) {
 	Polygon p1 = Polygon();
 
-	Polygon::Vertex* v1 = new Polygon::Vertex(FVector2D(1, 2), Polygon::NONE);
-	Polygon::Vertex* v2 = new Polygon::Vertex(FVector2D(2, 0), Polygon::NONE);
+	Polygon::VertexData v1 = { FVector2D(1, 2) };
+	Polygon::VertexData v2 = { FVector2D(2, 0) };
 
-	/*
-	
-	Best use case
-
-	- Creating vertex, adding to polygon, refrenceing vertex later
-
-	Public access to vertex is critical, wrapper could be used for vertex usage like Unreal
-	Wrapper not public avalible. 
-
-	Vertex v = Vertex(FVector2D(2,2), NONE); // Will be deleted once out of scope!
-
-	Polygon p1 = Polygon();
-
-	p1.Add(v); // Adds copy of v into polygon.
-
-
-	doing (v->pos = new value) is invalid as v is not referencing the correct node
-	To inforce this behavior we can either make those values const or private and have specific getters only friends can modify
-
-
-	Polygons in use case should be add to and editable!
-	
-	*/
-
-	
 	p1.Add(v1);
 	p1.Add(v2);
 
@@ -205,7 +162,7 @@ bool TestUniqueData::RunTest(const FString& Parameters) {
 	Polygon p1 = Polygon();
 	Polygon p2 = Polygon();
 
-	Polygon::Vertex* v1 = new Polygon::Vertex(FVector2D(0, 0), Polygon::NONE);
+	Polygon::VertexData v1 = { FVector2D(0, 0) };
 
 	p1.Add(v1);
 	p2.Add(v1);
@@ -216,16 +173,14 @@ bool TestUniqueData::RunTest(const FString& Parameters) {
 	Polygon::Vertex* h1 = p1.HeadNode;
 	Polygon::Vertex* h2 = p2.HeadNode;
 
-	h1->pos = FVector2D(1, 1);
+	h1->data.pos = FVector2D(1, 1);
 
-	TestEqual("Polygon: Test no linking data across polygons", h2->pos, FVector2D(0,0));
+	TestEqual("Polygon: Test no linking data across polygons", h2->data.pos, FVector2D(0,0));
 
-	v1->pos = FVector2D(-1, -1);
+	v1.pos = FVector2D(-1, -1);
 
-	TestEqual("Polygon: Test no data updates from source", h1->pos, FVector2D(1, 1));
-	TestEqual("Polygon: Test no data updates from source", h2->pos, FVector2D(0, 0)); 
+	TestEqual("Polygon: Test no data updates from source", h1->data.pos, FVector2D(1, 1));
+	TestEqual("Polygon: Test no data updates from source", h2->data.pos, FVector2D(0, 0)); 
 
 	return true;
 }
-
-// Also don't check vertex is deleted

@@ -7,48 +7,54 @@ class SIEGE_API Polygon
 public:
     enum InterceptTypes { NONE, ENTRY, EXIT };
 
-    class Vertex {
-    public:
+    struct VertexData {
         FVector2D pos;
-        InterceptTypes type;
-        Vertex* NextNode;
-        Vertex* PrevNode;
-
-        // Marks where W-A (Weiler-Atherton) Algorithm goes for intercepts
-        Vertex* intercept_link = nullptr;
+        InterceptTypes type = NONE;
 
         bool static compareAproxPos(FVector2D A, FVector2D B) {
             return (std::roundf(A.X) == std::roundf(B.X) &&
                 std::roundf(A.Y) == std::roundf(B.Y));
         }
 
-        bool equals(const Vertex& other) const {
+        bool operator==(const VertexData& other) const {
             return (compareAproxPos(pos, other.pos) && type == other.type);
+        }
+
+        bool operator!=(const VertexData& other) const {
+            return !(compareAproxPos(pos, other.pos) && type == other.type);
+        }
+    };
+
+    class Vertex {
+
+    public:
+        VertexData data;
+        Vertex* NextNode;
+        Vertex* PrevNode;
+        Vertex* intercept_link;
+
+        FString ToString() const {
+            switch (data.type) {
+            case NONE:
+                return "[ " + data.pos.ToString() + ", NONE]";
+            case ENTRY:
+                return "[" + data.pos.ToString() + ", ENTRY]";
+            case EXIT:
+                return "[" + data.pos.ToString() + ", EXIT]";
+            }
+
+            return data.pos.ToString();
         }
 
         bool operator==(const Vertex& other) const {
-            return (compareAproxPos(pos, other.pos) && type == other.type);
+            return data == other.data;
         }
 
         bool operator!=(const Vertex& other) const {
-            return !(compareAproxPos(pos, other.pos) && type == other.type);
+            return data != other.data;
         }
-
-        FString ToString() const {
-            switch (type) {
-            case NONE:
-                return "[ " + pos.ToString() + ", NONE]";
-            case ENTRY:
-                return "[" + pos.ToString() + ", ENTRY]";
-            case EXIT:
-                return "[" + pos.ToString() + ", EXIT]";
-            }
-
-            return "[" + pos.ToString() + "]";
-        }
-
-    public:
-        Vertex(FVector2D pos, InterceptTypes type) : pos(pos), type(type), NextNode(nullptr), PrevNode(nullptr) { }
+            
+        Vertex(VertexData data) : data(data), NextNode(nullptr), PrevNode(nullptr), intercept_link(nullptr) {}
     };
 
     class PolygonIterator {
@@ -72,8 +78,8 @@ public:
         }
 
 
-        Vertex& operator*() {
-            return *currentVertex;
+        Vertex* operator*() {
+            return currentVertex;
         }
 
         bool operator==(const PolygonIterator& other) const {
@@ -117,8 +123,8 @@ public:
         Vertex* CurrentNode = target.HeadNode;
 
         do{
-      
-            Add(new Vertex(CurrentNode->pos, CurrentNode->type));
+            
+            Add({ CurrentNode->data.pos,CurrentNode->data.type });
             CurrentNode = CurrentNode->NextNode;
 
         } while (CurrentNode != target.HeadNode);
@@ -134,7 +140,7 @@ public:
         Vertex* CurrentNode = target.HeadNode;
 
         do {
-            Add(new Vertex(CurrentNode->pos, CurrentNode->type));
+            Add({ CurrentNode->data.pos,CurrentNode->data.type });
             CurrentNode = CurrentNode->NextNode;
 
         } while (CurrentNode != target.HeadNode);
@@ -153,7 +159,7 @@ public:
 
         do {
 
-            if (*vertexA != *vertexB) {
+            if (vertexA->data != vertexB->data) {
                 return false;
             }
 
@@ -174,9 +180,10 @@ public:
 
     int Num() const;
 
-    void Insert(Vertex* x, Vertex* nodeBeforex);
+    // Returns pointer to added Vertex
+    Vertex* Insert(VertexData x, Vertex* nodeBeforex);
 
-    void Add(Vertex* X);
+    Vertex* Add(VertexData X);
 
     void Empty();
 
@@ -194,4 +201,6 @@ public:
     friend class TestAdd;
     friend class TestInsert;
     friend class TestUniqueData;
+
+       
 };

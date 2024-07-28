@@ -34,8 +34,8 @@ bool Polygon::pointInsidePolygon(FVector2D const& point) const{
 	while(currentVertex->NextNode != HeadNode){
 
 		// Find current edge for wall_polygon
-		FVector2D a_start = currentVertex->pos;
-		FVector2D a_end = currentVertex->NextNode->pos;
+		FVector2D a_start = currentVertex->data.pos;
+		FVector2D a_end = currentVertex->NextNode->data.pos;
 
 		float x1 = a_start.X;
 		float y1 = a_start.Y;
@@ -59,52 +59,57 @@ int Polygon::Num() const{
 	return size;
 }
 
-void Polygon::Insert(Vertex* x, Vertex* nodeBeforex){
+Polygon::Vertex* Polygon::Insert(VertexData x, Vertex* nodeBeforex){
 
-	if (x == nullptr || nodeBeforex == nullptr) return;
+	if (nodeBeforex == nullptr) return nullptr;
 
 	if (nodeBeforex == TailNode) {
-		Add(x);
+		return Add(x);
 	}
 	else {
+
+		Vertex* newVertex = new Vertex(x);
+
 		// Insert new node
 
 		// Hook up new node
-		x->PrevNode = nodeBeforex;
-		x->NextNode = nodeBeforex->NextNode;
+		newVertex->PrevNode = nodeBeforex;
+		newVertex->NextNode = nodeBeforex->NextNode;
 
 		// Hook up neighbors
-		nodeBeforex->NextNode = x;
-		x->NextNode->PrevNode = x;
+		nodeBeforex->NextNode = newVertex;
+		nodeBeforex->NextNode->PrevNode = newVertex;
 
 		size++;
+		return newVertex;
 	}
 }
 
 // Append to end
-void Polygon::Add(Vertex* x) {
+Polygon::Vertex* Polygon::Add(VertexData x) {
 
-	if (x == nullptr) return;
+	Vertex* newVertex = new Vertex(x);
 
 	if (size == 0) {
-		HeadNode = TailNode = x;
+		HeadNode = TailNode = newVertex;
 	}
 	else {
 		// Add new Tail
 
 		// Hook up new node
-		x->NextNode = HeadNode;
-		x->PrevNode = TailNode;
+		newVertex->NextNode = HeadNode;
+		newVertex->PrevNode = TailNode;
 
 		// Connect neighbors
-		TailNode->NextNode = x;
-		HeadNode->PrevNode = x;
+		TailNode->NextNode = newVertex;
+		HeadNode->PrevNode = newVertex;
 
 		// Change Tail
-		TailNode = x;
+		TailNode = newVertex;
 	}
 
 	size++;
+	return newVertex;
 }
 
 void Polygon::Empty() {

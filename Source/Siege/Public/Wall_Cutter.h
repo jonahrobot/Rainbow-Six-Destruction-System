@@ -41,7 +41,7 @@ private:
 	FVector actor_origin;
 	FRotator actor_rotation;
 
-	Polygon walkLoop(TArray<Polygon::Vertex>& OUT_visited, Polygon::Vertex* start, int direction);
+	Polygon walkLoop(TArray<Polygon::VertexData>& OUT_visited, Polygon::Vertex* start, int direction);
 
 	Polygon::InterceptTypes getInterceptType(FVector2D const& intercept_point, FVector2D const& next_point);
 

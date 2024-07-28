@@ -35,15 +35,15 @@ void UWall_Cutter::BeginPlay()
 	wall_polygon.Empty();
 	cut_polygon.Empty();
 
-	start_wall_polygon.Add(new Polygon::Vertex(FVector2D(actor_scale.Y, actor_scale.Z),Polygon::NONE));
-	start_wall_polygon.Add(new Polygon::Vertex(FVector2D(-actor_scale.Y, actor_scale.Z),Polygon::NONE));
-	start_wall_polygon.Add(new Polygon::Vertex(FVector2D(-actor_scale.Y, -actor_scale.Z),Polygon::NONE));
-	start_wall_polygon.Add(new Polygon::Vertex(FVector2D(actor_scale.Y, -actor_scale.Z),Polygon::NONE));
+	start_wall_polygon.Add({ FVector2D(actor_scale.Y, actor_scale.Z), Polygon::NONE });
+	start_wall_polygon.Add({ FVector2D(-actor_scale.Y, actor_scale.Z),Polygon::NONE });
+	start_wall_polygon.Add({ FVector2D(-actor_scale.Y, -actor_scale.Z),Polygon::NONE });
+	start_wall_polygon.Add({ FVector2D(actor_scale.Y, -actor_scale.Z),Polygon::NONE });
 
-	start_cut_polygon.Add(new Polygon::Vertex(FVector2D(actor_scale.Y + 20, -actor_scale.Z - 20), Polygon::NONE));
-	start_cut_polygon.Add(new Polygon::Vertex(FVector2D(actor_scale.Y + 20, 0), Polygon::NONE));
-	start_cut_polygon.Add(new Polygon::Vertex(FVector2D(0, 0), Polygon::NONE));
-	start_cut_polygon.Add(new Polygon::Vertex(FVector2D(0, -actor_scale.Z - 20), Polygon::NONE));
+	start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, -actor_scale.Z - 20), Polygon::NONE });
+	start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, 0), Polygon::NONE });
+	start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
+	start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 20), Polygon::NONE });
 }
 
 #pragma endregion Setup
@@ -103,19 +103,19 @@ void UWall_Cutter::cutWall() {
 	// Find intersections between the two polygons
 	// Then add them to the new wall_polygon and cut_polygon
 
-	for(Polygon::Vertex& wall_vertex : wall_polygon){
+	for(Polygon::Vertex* wall_vertex : wall_polygon){
 
-		if (wall_vertex.type != Polygon::NONE) continue;
+		if (wall_vertex->data.type != Polygon::NONE) continue;
 
-		for (Polygon::Vertex& cut_vertex : cut_polygon) {
+		for (Polygon::Vertex* cut_vertex : cut_polygon) {
 
-			if (cut_vertex.type != Polygon::NONE) continue;
+			if (cut_vertex->data.type != Polygon::NONE) continue;
 
 			// Find current edge for wall_polygon
-			MathLib::EDGE a = { wall_vertex.pos, wall_vertex.NextNode->pos };
+			MathLib::EDGE a = { wall_vertex->data.pos, wall_vertex->NextNode->data.pos };
 
 			// Find current edge for cut_polygon
-			MathLib::EDGE b = { cut_vertex.pos, cut_vertex.NextNode->pos };
+			MathLib::EDGE b = { cut_vertex->data.pos, cut_vertex->NextNode->data.pos };
 
 			FVector2D out;
 			bool found_intersept = MathLib::Find_Intersection(out, a, b);
@@ -128,16 +128,12 @@ void UWall_Cutter::cutWall() {
 
 			Polygon::InterceptTypes intercept_type = getInterceptType(out, b.end);
 
-			Polygon::Vertex* add_to_wall = new Polygon::Vertex(out,intercept_type);
-			Polygon::Vertex* add_to_cut = new Polygon::Vertex(out, intercept_type);
+			Polygon::Vertex* insert_into_wall = wall_polygon.Insert({ out,intercept_type }, wall_vertex);
+			Polygon::Vertex* insert_into_cut = cut_polygon.Insert({ out, intercept_type }, cut_vertex);
 
 			// Create intercept link (ENTRY links in wall_polygon) (EXIT links in cut_polygon)
-			if(intercept_type == Polygon::ENTRY) add_to_wall->intercept_link = add_to_cut;
-			if (intercept_type == Polygon::EXIT) add_to_cut->intercept_link = add_to_wall;
-
-			// Add intercept to each polygon
-			wall_polygon.Insert(add_to_wall, &wall_vertex);
-			cut_polygon.Insert(add_to_cut, &cut_vertex);
+			if(intercept_type == Polygon::ENTRY) insert_into_wall->intercept_link = insert_into_cut;
+			if(intercept_type == Polygon::EXIT) insert_into_cut->intercept_link = insert_into_wall;
 		}
 	}
 
@@ -146,50 +142,50 @@ void UWall_Cutter::cutWall() {
 	// Find our resulting destruction piece polygons
 
 	regions.Empty();
-	TArray<Polygon::Vertex> visited;
+	TArray<Polygon::VertexData> visited;
 	
 	int clockwise = 1;
 
 	// Find Direction
 
 
-	for (Polygon::Vertex& current_vertex : cut_polygon) {
+	for (Polygon::Vertex* current_vertex : cut_polygon) {
 
-		if (visited.Contains(current_vertex) == false && current_vertex.type == Polygon::ENTRY) {
+		if (visited.Contains(current_vertex->data) == false && current_vertex->data.type == Polygon::ENTRY) {
 
-			Polygon new_region = walkLoop(visited, &current_vertex, clockwise);
+			Polygon new_region = walkLoop(visited, current_vertex, clockwise);
 
 			regions.Add(new_region);
 		}
 	}
 }
 
-Polygon UWall_Cutter::walkLoop(TArray<Polygon::Vertex> &OUT_visited, Polygon::Vertex*  start, int direction) {
+Polygon UWall_Cutter::walkLoop(TArray<Polygon::VertexData> &OUT_visited, Polygon::Vertex*  start, int direction) {
 
 	Polygon loop;
-	loop.Add(start);
-	OUT_visited.Add(*start);
+	loop.Add(start->data);
+	OUT_visited.Add(start->data);
 
 	bool in_cut_polygon = true;
 	Polygon::Vertex* x = start->NextNode;
 
-	while (x->equals(*start) == false){
-		loop.Add(x);
+	while (x->data == start->data == false){
+		loop.Add(x->data);
 
-		if (OUT_visited.Contains(*x) && (x->type == Polygon::ENTRY || x->type == Polygon::EXIT)) {
-			UE_LOG(LogTemp, Warning, TEXT("%s vs %s"), *x->pos.ToString(), *start->pos.ToString());
-			UE_LOG(LogTemp, Error, TEXT("Infinite loop found when walking loop! %s vs %s"), *x->pos.ToString(), *start->pos.ToString());
+		if (OUT_visited.Contains(x->data) && (x->data.type == Polygon::ENTRY || x->data.type == Polygon::EXIT)) {
+			UE_LOG(LogTemp, Warning, TEXT("%s vs %s"), *x->data.pos.ToString(), *start->data.pos.ToString());
+			UE_LOG(LogTemp, Error, TEXT("Infinite loop found when walking loop! %s vs %s"), *x->data.pos.ToString(), *start->data.pos.ToString());
 			return loop;
 		}
 
-		OUT_visited.Add(*x);
+		OUT_visited.Add(x->data);
 
-		if (x->intercept_link != nullptr && (x->type == Polygon::ENTRY || x->type == Polygon::EXIT)) {
+		if (x->intercept_link != nullptr && (x->data.type == Polygon::ENTRY || x->data.type == Polygon::EXIT)) {
 
 			x = x->intercept_link;
 
 			if (in_cut_polygon) {
-				if (cut_polygon.pointInsidePolygon(x->NextNode->pos)) {
+				if (cut_polygon.pointInsidePolygon(x->NextNode->data.pos)) {
 					direction = -1;
 				}
 			}
