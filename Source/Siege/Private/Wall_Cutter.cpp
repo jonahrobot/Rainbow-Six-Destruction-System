@@ -162,7 +162,7 @@ void UWall_Cutter::cutWall() {
 
 Polygon UWall_Cutter::walkLoop(TArray<Polygon::VertexData> &OUT_visited, Polygon::Vertex*  start, int direction) {
 
-	Polygon loop;
+	Polygon loop = Polygon();
 	loop.Add(start->data);
 	OUT_visited.Add(start->data);
 

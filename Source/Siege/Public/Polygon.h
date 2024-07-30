@@ -113,21 +113,22 @@ public:
 
     Polygon(const Polygon& target)
     {
-        // Copy Constructor
-        if (target.size == 0) return;
-
-        HeadNode = nullptr;
+        HeadNode = nullptr; 
         TailNode = nullptr;
         size = 0;
+
+        // Copy Constructor
+        if (target.size == 0) return;
 
         Vertex* CurrentNode = target.HeadNode;
 
         do{
-            
-            Add({ CurrentNode->data.pos,CurrentNode->data.type });
-            CurrentNode = CurrentNode->NextNode;
+            if (CurrentNode != nullptr) {
+                Add({ CurrentNode->data.pos,CurrentNode->data.type });
+                CurrentNode = CurrentNode->NextNode;
+            }
 
-        } while (CurrentNode != target.HeadNode);
+        } while (CurrentNode != nullptr && CurrentNode != target.HeadNode);
     }
 
     Polygon& operator=(const Polygon& target)
@@ -201,6 +202,6 @@ public:
     friend class TestAdd;
     friend class TestInsert;
     friend class TestUniqueData;
-
+    friend class TestEmpty;
        
 };

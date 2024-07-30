@@ -31,7 +31,7 @@ bool Polygon::pointInsidePolygon(FVector2D const& point) const{
 	
 	Vertex* currentVertex = HeadNode;
 
-	while(currentVertex->NextNode != HeadNode){
+	while(currentVertex != nullptr && currentVertex->NextNode != HeadNode){
 
 		// Find current edge for wall_polygon
 		FVector2D a_start = currentVertex->data.pos;
@@ -92,6 +92,8 @@ Polygon::Vertex* Polygon::Add(VertexData x) {
 
 	if (size == 0) {
 		HeadNode = TailNode = newVertex;
+		newVertex->NextNode = newVertex;
+		newVertex->PrevNode = newVertex;
 	}
 	else {
 		// Add new Tail
@@ -119,7 +121,7 @@ void Polygon::Empty() {
 	Vertex* Current = HeadNode;
 	Vertex* EndTarget = TailNode;
 
-	while (Current != EndTarget)
+	while (Current != nullptr && Current != EndTarget)
 	{
 		Vertex* DeleteNode = Current;
 		Current = Current->NextNode;
