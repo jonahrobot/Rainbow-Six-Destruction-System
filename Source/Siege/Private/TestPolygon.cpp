@@ -67,6 +67,7 @@ bool Iterator_CheckIterator::RunTest(const FString& Parameters) {
 
 // Polygon Tests
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestAdd, "Polygon.TestAdd", TEST_FLAGS)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestStringConstructor, "Polygon.TestStringConstructor", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestCopyConstructor, "Polygon.TestCopyConstructor", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestInsert, "Polygon.TestInsert", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestEmpty, "Polygon.TestEmpty", TEST_FLAGS)
@@ -123,6 +124,24 @@ bool TestInsert::RunTest(const FString& Parameters) {
 	TestTrue("Polygon: Insert: V2 Properties", v2->NextNode->data == v3->data && v2->PrevNode->data == v1->data);
 	TestTrue("Polygon: Insert: V3 Properties", v3->NextNode->data == v4->data && v3->PrevNode->data == v2->data);
 	TestTrue("Polygon: Insert: V4 Properties", v4->NextNode->data == v1->data && v4->PrevNode->data == v3->data);
+
+	return true;
+}
+
+bool TestStringConstructor::RunTest(const FString& Parameters) {
+
+	Polygon stringBased = Polygon("(2, 2), (0, 2), (0, 1, ENTRY), (0, 0), (1, 0, EXIT), (2, 0)");
+
+	Polygon base = Polygon();
+
+	base.Add({ FVector2D(2, 2) });
+	base.Add({ FVector2D(0, 2) });
+	base.Add({ FVector2D(0, 1), Polygon::ENTRY });
+	base.Add({ FVector2D(0, 0) });
+	base.Add({ FVector2D(1, 0), Polygon::EXIT });
+	base.Add({ FVector2D(2, 0) });
+
+	TestEqual("Polygon: StringConstructor: String creates correct Polygon", stringBased, base);
 
 	return true;
 }

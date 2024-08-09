@@ -111,6 +111,14 @@ public:
 
     void printPolygon() const;
 
+    Polygon(FString polygonString) {
+        HeadNode = nullptr;
+        TailNode = nullptr;
+        size = 0;
+
+        this->initalizeWithString(polygonString);
+    }
+
     Polygon(const Polygon& target)
     {
         HeadNode = nullptr; 
@@ -176,6 +184,8 @@ public:
     {
         return !operator==(target);
     }
+
+    void initalizeWithString(FString polygonString);
 
     bool pointInsidePolygon(FVector2D const& point) const;
 

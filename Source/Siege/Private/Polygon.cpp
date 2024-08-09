@@ -8,6 +8,33 @@ Polygon::~Polygon()
 	Empty();
 }
 
+void Polygon::initalizeWithString(FString polygonString) {
+
+	polygonString.RemoveSpacesInline();
+	FRegexPattern Pattern("\\((-?\\d+),(-?\\d+)(?:,([^)]+))?\\)");
+	FRegexMatcher Matcher(Pattern, polygonString);
+
+	while (Matcher.FindNext()) {
+
+		float x = FCString::Atof(*Matcher.GetCaptureGroup(1));
+		float y = FCString::Atof(*Matcher.GetCaptureGroup(2));
+
+		FString type = Matcher.GetCaptureGroup(3);
+
+		VertexData newVertex = { FVector2D(x, y) };
+
+		if (type == "ENTRY") {
+			newVertex.type = ENTRY;
+		}
+		if (type == "EXIT") {
+			newVertex.type = EXIT;
+		}
+
+		Add(newVertex);
+	}
+}
+
+
 void Polygon::printPolygon() const{
 	Vertex* currentVertex = HeadNode;
 	FString out;

@@ -22,16 +22,16 @@ public:
 	 *	@cut_polygon the polygon we want to cut from the wall
 	 */
 	void cutWall();
+	void Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon);
 
 	// Replicate input from user for testing
 	// Calls Cut_Wall with pre-defined shape
-	void startCut();
-
+		
 	void addCutPoint(FVector2D const& PointToAdd);
 
 private:
-	Polygon wall_polygon;
-	Polygon cut_polygon;
+	Polygon wall_polygon_out;
+	Polygon cut_polygon_out;
 	TArray<Polygon> regions;
 
 	Polygon start_wall_polygon;
@@ -52,4 +52,6 @@ protected:
 
 public:	
 	friend class UWall_Cutter_Test;
+	friend class TestWallCutter;
+	friend class WallCutter_TwoSquaresOverlap;
 };

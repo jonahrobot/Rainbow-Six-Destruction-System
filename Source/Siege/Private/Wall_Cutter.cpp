@@ -32,8 +32,8 @@ void UWall_Cutter::BeginPlay()
 	actor_origin = GetOwner()->GetActorLocation();
 	actor_rotation = GetOwner()->GetActorRotation();
 
-	wall_polygon.Empty();
-	cut_polygon.Empty();
+	wall_polygon_out.Empty();
+	cut_polygon_out.Empty();
 
 	start_wall_polygon.Add({ FVector2D(actor_scale.Y, actor_scale.Z), Polygon::NONE });
 	start_wall_polygon.Add({ FVector2D(-actor_scale.Y, actor_scale.Z),Polygon::NONE });
@@ -68,7 +68,7 @@ Polygon::InterceptTypes UWall_Cutter::getInterceptType(FVector2D const& intercep
 	FVector global = MathLib::LocalToGlobal(dir, actor_origin, actor_rotation, actor_scale.X);
 	DrawDebugSphere(GetWorld(), global, 15, 10, FColor::Orange, true, -1.0f,-1);
 
-	bool nextPointInWall = wall_polygon.pointInsidePolygon(dir);
+	bool nextPointInWall = wall_polygon_out.pointInsidePolygon(dir);
 
 	if (nextPointInWall) {
 		return Polygon::ENTRY;
@@ -79,31 +79,9 @@ Polygon::InterceptTypes UWall_Cutter::getInterceptType(FVector2D const& intercep
 
 #pragma endregion Helper Methods
 
-/*
- *	Cut polygon from wall
- *	Updates mesh Wall_Cutter component is attached too
- *	
- *	@cut_shape the polygon we want to cut from the wall
- *		- cut_shape vertices must be ordered clockwise
- */
-void UWall_Cutter::cutWall() {
+void UWall_Cutter::Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon) {
 
-
-	if (start_cut_polygon.Num() <= 2) return;
-	UE_LOG(LogTemp, Warning, TEXT("Started Cut"));
-	// Follows Weiler-Atherton polygon clipping algorithm
-
-	// Create polygon lists
-
-	wall_polygon.Empty(); cut_polygon.Empty();
-
-	wall_polygon = start_wall_polygon;
-	cut_polygon = start_cut_polygon;
-
-	// Find intersections between the two polygons
-	// Then add them to the new wall_polygon and cut_polygon
-
-	for(Polygon::Vertex* wall_vertex : wall_polygon){
+	for (Polygon::Vertex* wall_vertex : wall_polygon) {
 
 		if (wall_vertex->data.type != Polygon::NONE) continue;
 
@@ -132,28 +110,39 @@ void UWall_Cutter::cutWall() {
 			Polygon::Vertex* insert_into_cut = cut_polygon.Insert({ out, intercept_type }, cut_vertex);
 
 			// Create intercept link (ENTRY links in wall_polygon) (EXIT links in cut_polygon)
-			if(intercept_type == Polygon::ENTRY) insert_into_wall->intercept_link = insert_into_cut;
-			if(intercept_type == Polygon::EXIT) insert_into_cut->intercept_link = insert_into_wall;
+			if (intercept_type == Polygon::ENTRY) insert_into_wall->intercept_link = insert_into_cut;
+			if (intercept_type == Polygon::EXIT) insert_into_cut->intercept_link = insert_into_wall;
 		}
 	}
+}
 
-	// At this point we have a wall_polygon and cut_polygon, with intercepts in correct order, pointed and labeled!
+/*
+ *	Cut polygon from wall
+ *	Updates mesh Wall_Cutter component is attached too
+ *	
+ *	@cut_shape the polygon we want to cut from the wall
+ *		- cut_shape vertices must be ordered clockwise
+ */
+void UWall_Cutter::cutWall() {
 
-	// Find our resulting destruction piece polygons
+	if (start_cut_polygon.Num() <= 2) return;
+
+	UE_LOG(LogTemp, Warning, TEXT("Started Cut"));
+
+	wall_polygon_out = start_wall_polygon;
+	cut_polygon_out = start_cut_polygon;
+
+    Add_Intercepts(wall_polygon_out, cut_polygon_out);
 
 	regions.Empty();
 	TArray<Polygon::VertexData> visited;
-	
-	int clockwise = 1;
 
-	// Find Direction
-
-
-	for (Polygon::Vertex* current_vertex : cut_polygon) {
+	// Start walk
+	for (Polygon::Vertex* current_vertex : cut_polygon_out) {
 
 		if (visited.Contains(current_vertex->data) == false && current_vertex->data.type == Polygon::ENTRY) {
 
-			Polygon new_region = walkLoop(visited, current_vertex, clockwise);
+			Polygon new_region = walkLoop(visited, current_vertex, 1);
 
 			regions.Add(new_region);
 		}
@@ -185,7 +174,7 @@ Polygon UWall_Cutter::walkLoop(TArray<Polygon::VertexData> &OUT_visited, Polygon
 			x = x->intercept_link;
 
 			if (in_cut_polygon) {
-				if (cut_polygon.pointInsidePolygon(x->NextNode->data.pos)) {
+				if (cut_polygon_out.pointInsidePolygon(x->NextNode->data.pos)) {
 					direction = -1;
 				}
 			}

@@ -36,14 +36,14 @@ void UWall_Cutter_Test::BeginPlay()
 	rotation = cutter->actor_rotation;
 	scale = cutter->actor_scale;
 
-	currentX = cutter->wall_polygon.HeadNode;
-	currentY = cutter->cut_polygon.HeadNode;
+	currentX = cutter->wall_polygon_out.HeadNode;
+	currentY = cutter->cut_polygon_out.HeadNode;
 }
 
 void UWall_Cutter_Test::Step_Up() {
 	if (currentY == nullptr || currentX == nullptr) {
-		currentX = cutter->wall_polygon.HeadNode;
-		currentY = cutter->cut_polygon.HeadNode;
+		currentX = cutter->wall_polygon_out.HeadNode;
+		currentY = cutter->cut_polygon_out.HeadNode;
 	}
 
 	if (currentY == nullptr || currentX == nullptr) return;
@@ -53,8 +53,8 @@ void UWall_Cutter_Test::Step_Up() {
 }
 void UWall_Cutter_Test::Step_Down() {
 	if (currentY == nullptr || currentX == nullptr) {
-		currentX = cutter->wall_polygon.HeadNode;
-		currentY = cutter->cut_polygon.HeadNode;
+		currentX = cutter->wall_polygon_out.HeadNode;
+		currentY = cutter->cut_polygon_out.HeadNode;
 	}
 
 	if (currentY == nullptr || currentX == nullptr) return;
@@ -64,8 +64,8 @@ void UWall_Cutter_Test::Step_Down() {
 }
 void UWall_Cutter_Test::Step_Left() {
 	if (currentY == nullptr || currentX == nullptr) {
-		currentX = cutter->wall_polygon.HeadNode;
-		currentY = cutter->cut_polygon.HeadNode;
+		currentX = cutter->wall_polygon_out.HeadNode;
+		currentY = cutter->cut_polygon_out.HeadNode;
 	}
 
 	if (currentY == nullptr || currentX == nullptr) return;
@@ -75,8 +75,8 @@ void UWall_Cutter_Test::Step_Left() {
 }
 void UWall_Cutter_Test::Step_Right() {
 	if (currentY == nullptr || currentX == nullptr) {
-		currentX = cutter->wall_polygon.HeadNode;
-		currentY = cutter->cut_polygon.HeadNode;
+		currentX = cutter->wall_polygon_out.HeadNode;
+		currentY = cutter->cut_polygon_out.HeadNode;
 	}
 
 	if (currentY == nullptr || currentX == nullptr) return;
@@ -154,7 +154,7 @@ void UWall_Cutter_Test::Draw_Cut_Poly() {
 }
 
 void UWall_Cutter_Test::Draw_Wall_Intercepts() {
-	Draw_Polygon(cutter->cut_polygon, "Wall Polygon: Intercepts",true);
+	Draw_Polygon(cutter->cut_polygon_out, "Wall Polygon: Intercepts",true);
 }
 
 void UWall_Cutter_Test::Draw_Shrapnel() {
