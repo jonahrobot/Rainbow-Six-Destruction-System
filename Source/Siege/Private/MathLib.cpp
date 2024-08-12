@@ -41,25 +41,20 @@ bool MathLib::Find_Intersection(FVector2D& out, EDGE edge_a, EDGE edge_b) {
 
 	// Check if found point is in both lines
 	if (!check_in_range(edge_a.start.X, edge_a.end.X, x)) {
-		UE_LOG(LogTemp, Warning, TEXT("Failed A: Range from %f to %f failed by %f"), edge_a.start.X, edge_a.end.X, x); 
 		return false;
 	}
 	if (!check_in_range(edge_a.start.Y, edge_a.end.Y, y)) {
-		UE_LOG(LogTemp, Warning, TEXT("Failed B: Range from %f to %f failed by %f"), edge_a.start.Y, edge_a.end.Y, y);
 		return false;
 	}
 	if (!check_in_range(edge_b.start.X, edge_b.end.X, x)) {
-		UE_LOG(LogTemp, Warning, TEXT("Failed C: Range from %f to %f failed by %f"), edge_b.start.X, edge_b.end.X, x);
 		return false;
 	}
 	if (!check_in_range(edge_b.start.Y, edge_b.end.Y, y)) {
-		UE_LOG(LogTemp, Warning, TEXT("Failed D: Range from %f to %f failed by %f"), edge_b.start.Y, edge_b.end.Y, y);
 		return false;
 	}
 
 	// Return success!
 	out = FVector2D(x, y);
-	UE_LOG(LogTemp, Warning, TEXT("Found Intercept"));
 	return true;
 }
 

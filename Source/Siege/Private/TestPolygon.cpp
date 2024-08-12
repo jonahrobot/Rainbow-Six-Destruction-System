@@ -72,6 +72,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestCopyConstructor, "Polygon.TestCopyConstruct
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestInsert, "Polygon.TestInsert", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestEmpty, "Polygon.TestEmpty", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestUniqueData, "Polygon.TestUniqueData", TEST_FLAGS)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestInsidePolygon, "Polygon.TestInsidePolygon", TEST_FLAGS)
 
 bool TestAdd::RunTest(const FString& Parameters) {
 
@@ -218,6 +219,17 @@ bool TestUniqueData::RunTest(const FString& Parameters) {
 
 	TestEqual("Polygon: Test no data updates from source", h1->data.pos, FVector2D(1, 1));
 	TestEqual("Polygon: Test no data updates from source", h2->data.pos, FVector2D(0, 0)); 
+
+	return true;
+}
+
+bool TestInsidePolygon::RunTest(const FString& Parameters) {
+
+	Polygon p1 = Polygon("(1,1),(-1,1),(-1,-1),(1,-1)");
+
+	TestTrue("Polygon: Test point inside polygon",p1.pointInsidePolygon(FVector2D(0, 0)));
+	TestTrue("Polygon: Test point inside polygon by pixel", p1.pointInsidePolygon(FVector2D(0, 0.99)));
+	TestFalse("Polygon: Test point outside polygon", p1.pointInsidePolygon(FVector2D(10, 10)));
 
 	return true;
 }

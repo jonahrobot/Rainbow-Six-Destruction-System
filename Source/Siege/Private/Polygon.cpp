@@ -35,30 +35,31 @@ void Polygon::initalizeWithString(FString polygonString) {
 }
 
 
-void Polygon::printPolygon() const{
+void Polygon::printPolygon(FString title) const{
 	Vertex* currentVertex = HeadNode;
 	FString out;
 
+	out += title + " Size:";
 	out.AppendInt(Num());
+	out += " ";
 
 	do{
-		out += currentVertex->ToString() + "<->";
+		out += currentVertex->ToString() + ",";
 		currentVertex = currentVertex->NextNode;
 	} while (currentVertex != HeadNode);
 
 	UE_LOG(LogTemp, Warning, TEXT("%s"), *out);
 }
 
-bool Polygon::pointInsidePolygon(FVector2D const& point) const{
+bool Polygon::pointInsidePolygon(FVector2D const& point){
 
 	// Follows algorithm presented below, finds it point is inside polygon
 	// https://www.youtube.com/watch?v=RSXM9bgqxJM&list=LL&index=1
 
 	int overlaps = 0;
-	
-	Vertex* currentVertex = HeadNode;
 
-	while(currentVertex != nullptr && currentVertex->NextNode != HeadNode){
+	for (PolygonIterator itr = begin(); itr != end(); itr++) {
+		Vertex* currentVertex = *itr;
 
 		// Find current edge for wall_polygon
 		FVector2D a_start = currentVertex->data.pos;
@@ -75,8 +76,6 @@ bool Polygon::pointInsidePolygon(FVector2D const& point) const{
 				overlaps += 1;
 			}
 		}
-
-		currentVertex = currentVertex->NextNode;
 	}
 
 	return overlaps % 2 == 1;

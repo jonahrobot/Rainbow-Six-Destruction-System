@@ -34,16 +34,19 @@ public:
         Vertex* intercept_link;
 
         FString ToString() const {
+
+            FString out = "(" + FString::SanitizeFloat(data.pos.X, 0) + "," + FString::SanitizeFloat(data.pos.Y, 0);
+
             switch (data.type) {
             case NONE:
-                return "[ " + data.pos.ToString() + ", NONE]";
+                return out + ",NONE)";
             case ENTRY:
-                return "[" + data.pos.ToString() + ", ENTRY]";
+                return out + ",ENTRY)";
             case EXIT:
-                return "[" + data.pos.ToString() + ", EXIT]";
+                return out + ",EXIT)";
             }
 
-            return data.pos.ToString();
+            return out;
         }
 
         bool operator==(const Vertex& other) const {
@@ -109,7 +112,7 @@ public:
     Polygon() : HeadNode(nullptr), TailNode(nullptr), size(0) {};
 	~Polygon();
 
-    void printPolygon() const;
+    void printPolygon(FString title = "") const;
 
     Polygon(FString polygonString) {
         HeadNode = nullptr;
@@ -187,7 +190,7 @@ public:
 
     void initalizeWithString(FString polygonString);
 
-    bool pointInsidePolygon(FVector2D const& point) const;
+    bool pointInsidePolygon(FVector2D const& point);
 
     int Num() const;
 
@@ -205,7 +208,7 @@ public:
     }
 
     PolygonIterator end() {
-        return PolygonIterator(TailNode,1,HeadNode);
+        return PolygonIterator(HeadNode,1,HeadNode);
     }
 
     friend class UWall_Cutter_Test;

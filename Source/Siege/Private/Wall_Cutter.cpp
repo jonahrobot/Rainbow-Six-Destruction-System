@@ -10,7 +10,7 @@
 // Sets default values for this component's properties
 UWall_Cutter::UWall_Cutter()
 {
-	PrimaryComponentTick.bCanEverTick = true;
+
 }
 
 // Called when the game starts
@@ -126,8 +126,6 @@ void UWall_Cutter::Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon) {
 void UWall_Cutter::cutWall() {
 
 	if (start_cut_polygon.Num() <= 2) return;
-
-	UE_LOG(LogTemp, Warning, TEXT("Started Cut"));
 
 	wall_polygon_out = start_wall_polygon;
 	cut_polygon_out = start_cut_polygon;
