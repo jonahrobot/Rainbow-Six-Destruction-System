@@ -126,6 +126,16 @@ bool TestInsert::RunTest(const FString& Parameters) {
 	TestTrue("Polygon: Insert: V3 Properties", v3->NextNode->data == v4->data && v3->PrevNode->data == v2->data);
 	TestTrue("Polygon: Insert: V4 Properties", v4->NextNode->data == v1->data && v4->PrevNode->data == v3->data);
 
+	Polygon p2 = Polygon();
+
+	Polygon::Vertex* left = p2.Add({ FVector2D(1, 2) });
+	Polygon::Vertex* right = p2.Add({ FVector2D(2, 0) });
+	Polygon::Vertex* middle = p2.Insert({ FVector2D(0, 0) }, left);
+
+	TestTrue("Polygon: Insert Case 2: V1 Properties", left->NextNode->data == middle->data && left->PrevNode->data == right->data);
+	TestTrue("Polygon: Insert Case 2: V2 Properties", middle->NextNode->data == right->data && middle->PrevNode->data == left->data);
+	TestTrue("Polygon: Insert Case 2: V3 Properties", right->NextNode->data == left->data && right->PrevNode->data == middle->data);
+
 	return true;
 }
 

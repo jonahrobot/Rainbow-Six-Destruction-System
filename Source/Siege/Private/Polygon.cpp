@@ -103,8 +103,8 @@ Polygon::Vertex* Polygon::Insert(VertexData x, Vertex* nodeBeforex){
 		newVertex->NextNode = nodeBeforex->NextNode;
 
 		// Hook up neighbors
+		nodeBeforex->NextNode->PrevNode = newVertex; // Needs to move up one
 		nodeBeforex->NextNode = newVertex;
-		nodeBeforex->NextNode->PrevNode = newVertex;
 
 		size++;
 		return newVertex;
