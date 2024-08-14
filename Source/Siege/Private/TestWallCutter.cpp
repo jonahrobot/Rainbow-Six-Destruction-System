@@ -26,7 +26,7 @@ bool WallCutter_TwoSquaresOverlap::RunTest(const FString& Parameters) {
 	Polygon wall_polygon_out = Polygon("(1,1),(0,1,ENTRY),(-1,1),(-1,-1),(1,-1),(1,0,EXIT)");
 	Polygon cut_polygon_out = Polygon("(2,2),(0,2),(0,1,ENTRY),(0,0),(1,0,EXIT),(2,0)");
 
-	Polygon cut_region_a = Polygon("(0,1,ENTRY),(-1,1),(-1,-1),(1,-1),(1,0,EXIT),(0,0)");
+	Polygon cut_region_a = Polygon("(0,1,ENTRY),(0,0),(1,0,EXIT),(1,-1),(-1,-1),(-1,1)");
 	
 	//// Print walls
 	//core->wall_polygon_out.printPolygon("Test result wall:");
