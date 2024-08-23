@@ -54,4 +54,5 @@ public:
 	friend class UWall_Cutter_Test;
 	friend class TestWallCutter;
 	friend class WallCutter_TwoSquaresOverlap;
+	friend class TestWallCutter;
 };

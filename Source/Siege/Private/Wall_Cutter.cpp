@@ -40,10 +40,10 @@ void UWall_Cutter::BeginPlay()
 	start_wall_polygon.Add({ FVector2D(-actor_scale.Y, -actor_scale.Z),Polygon::NONE });
 	start_wall_polygon.Add({ FVector2D(actor_scale.Y, -actor_scale.Z),Polygon::NONE });
 
-	start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, -actor_scale.Z - 20), Polygon::NONE });
-	start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, 0), Polygon::NONE });
-	start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
-	start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 20), Polygon::NONE });
+	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, -actor_scale.Z - 20), Polygon::NONE });
+	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, 0), Polygon::NONE });
+	//start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
+	//start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 20), Polygon::NONE });
 }
 
 #pragma endregion Setup
@@ -51,7 +51,7 @@ void UWall_Cutter::BeginPlay()
 #pragma region Helper Methods
 
 void UWall_Cutter::addCutPoint(FVector2D const& PointToAdd) {
-	//start_cut_polygon.Add(new Polygon::Vertex(PointToAdd, Polygon::NONE));
+	start_cut_polygon.Add({ PointToAdd, Polygon::NONE });
 }
 
 
