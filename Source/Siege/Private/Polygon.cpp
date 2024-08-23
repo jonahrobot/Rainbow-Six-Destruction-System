@@ -8,18 +8,62 @@ Polygon::~Polygon()
 	Empty();
 }
 
-bool Polygon::pointInsidePolygon(FVector2D const& point) const{
+void Polygon::initalizeWithString(FString polygonString) {
+
+	polygonString.RemoveSpacesInline();
+	FRegexPattern Pattern("\\((-?\\d+),(-?\\d+)(?:,([^)]+))?\\)");
+	FRegexMatcher Matcher(Pattern, polygonString);
+
+	while (Matcher.FindNext()) {
+
+		float x = FCString::Atof(*Matcher.GetCaptureGroup(1));
+		float y = FCString::Atof(*Matcher.GetCaptureGroup(2));
+
+		FString type = Matcher.GetCaptureGroup(3);
+
+		VertexData newVertex = { FVector2D(x, y) };
+
+		if (type == "ENTRY") {
+			newVertex.type = ENTRY;
+		}
+		if (type == "EXIT") {
+			newVertex.type = EXIT;
+		}
+
+		Add(newVertex);
+	}
+}
+
+
+void Polygon::printPolygon(FString title) const{
+	Vertex* currentVertex = HeadNode;
+	FString out;
+
+	out += title + " Size:";
+	out.AppendInt(Num());
+	out += " ";
+
+	do{
+		out += currentVertex->ToString() + ",";
+		currentVertex = currentVertex->NextNode;
+	} while (currentVertex != HeadNode);
+
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *out);
+}
+
+bool Polygon::pointInsidePolygon(FVector2D const& point){
 
 	// Follows algorithm presented below, finds it point is inside polygon
 	// https://www.youtube.com/watch?v=RSXM9bgqxJM&list=LL&index=1
 
 	int overlaps = 0;
 
-	for (int x = 0; x < Num(); x++) {
+	for (PolygonIterator itr = begin(); itr != end(); itr++) {
+		Vertex* currentVertex = *itr;
 
 		// Find current edge for wall_polygon
-		FVector2D a_start = vertices[x].pos;
-		FVector2D a_end = vertices[(x + 1) % Num()].pos;
+		FVector2D a_start = currentVertex->data.pos;
+		FVector2D a_end = currentVertex->NextNode->data.pos;
 
 		float x1 = a_start.X;
 		float y1 = a_start.Y;
@@ -41,52 +85,59 @@ int Polygon::Num() const{
 	return size;
 }
 
-void Polygon::Insert(Vertex* x, Vertex* nodeBeforex){
+Polygon::Vertex* Polygon::Insert(VertexData x, Vertex* nodeBeforex){
 
-	if (x == nullptr || nodeBeforex == nullptr) return;
+	if (nodeBeforex == nullptr) return nullptr;
 
 	if (nodeBeforex == TailNode) {
-		Add(x);
+		return Add(x);
 	}
 	else {
+
+		Vertex* newVertex = new Vertex(x);
+
 		// Insert new node
 
 		// Hook up new node
-		x->PrevNode = nodeBeforex;
-		x->NextNode = nodeBeforex->NextNode;
+		newVertex->PrevNode = nodeBeforex;
+		newVertex->NextNode = nodeBeforex->NextNode;
 
 		// Hook up neighbors
-		nodeBeforex->NextNode = x;
-		x->NextNode->PrevNode = x;
-	}
+		nodeBeforex->NextNode->PrevNode = newVertex; // Needs to move up one
+		nodeBeforex->NextNode = newVertex;
 
-	size++;
+		size++;
+		return newVertex;
+	}
 }
 
 // Append to end
-void Polygon::Add(Vertex* x) {
+Polygon::Vertex* Polygon::Add(VertexData x) {
 
-	if (x == nullptr) return;
+	Vertex* newVertex = new Vertex(x);
 
 	if (size == 0) {
-		HeadNode = TailNode = x;
+		HeadNode = TailNode = newVertex;
+		newVertex->NextNode = newVertex;
+		newVertex->PrevNode = newVertex;
 	}
 	else {
 		// Add new Tail
 
 		// Hook up new node
-		x->NextNode = HeadNode;
-		x->PrevNode = TailNode;
+		newVertex->NextNode = HeadNode;
+		newVertex->PrevNode = TailNode;
 
 		// Connect neighbors
-		TailNode->NextNode = x;
-		HeadNode->PrevNode = x;
+		TailNode->NextNode = newVertex;
+		HeadNode->PrevNode = newVertex;
 
 		// Change Tail
-		TailNode = x;
+		TailNode = newVertex;
 	}
 
 	size++;
+	return newVertex;
 }
 
 void Polygon::Empty() {
@@ -96,7 +147,7 @@ void Polygon::Empty() {
 	Vertex* Current = HeadNode;
 	Vertex* EndTarget = TailNode;
 
-	while (Current != EndTarget)
+	while (Current != nullptr && Current != EndTarget)
 	{
 		Vertex* DeleteNode = Current;
 		Current = Current->NextNode;

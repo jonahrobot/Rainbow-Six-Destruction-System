@@ -36,24 +36,51 @@ void UWall_Cutter_Test::BeginPlay()
 	rotation = cutter->actor_rotation;
 	scale = cutter->actor_scale;
 
-	currentX = cutter->wall_polygon.HeadNode;
-	currentY = cutter->cut_polygon.HeadNode;
+	currentX = cutter->wall_polygon_out.HeadNode;
+	currentY = cutter->cut_polygon_out.HeadNode;
 }
 
-
 void UWall_Cutter_Test::Step_Up() {
+	if (currentY == nullptr || currentX == nullptr) {
+		currentX = cutter->wall_polygon_out.HeadNode;
+		currentY = cutter->cut_polygon_out.HeadNode;
+	}
+
+	if (currentY == nullptr || currentX == nullptr) return;
+
 	currentY = currentY->NextNode;
 	Step_Through_Draw();
 }
 void UWall_Cutter_Test::Step_Down() {
+	if (currentY == nullptr || currentX == nullptr) {
+		currentX = cutter->wall_polygon_out.HeadNode;
+		currentY = cutter->cut_polygon_out.HeadNode;
+	}
+
+	if (currentY == nullptr || currentX == nullptr) return;
+
 	currentY = currentY->PrevNode;
 	Step_Through_Draw();
 }
 void UWall_Cutter_Test::Step_Left() {
+	if (currentY == nullptr || currentX == nullptr) {
+		currentX = cutter->wall_polygon_out.HeadNode;
+		currentY = cutter->cut_polygon_out.HeadNode;
+	}
+
+	if (currentY == nullptr || currentX == nullptr) return;
+
 	currentX = currentX->PrevNode;
 	Step_Through_Draw();
 }
 void UWall_Cutter_Test::Step_Right() {
+	if (currentY == nullptr || currentX == nullptr) {
+		currentX = cutter->wall_polygon_out.HeadNode;
+		currentY = cutter->cut_polygon_out.HeadNode;
+	}
+
+	if (currentY == nullptr || currentX == nullptr) return;
+
 	currentX = currentX->NextNode;
 	Step_Through_Draw();
 }
@@ -76,16 +103,16 @@ void UWall_Cutter_Test::Draw_Polygon(Polygon poly, FString nameOfDraw, bool draw
 	}
 
 	// Get last vertex pos, to create lines from
-	FVector lastGlobal = MathLib::LocalToGlobal(poly.TailNode->pos, origin, rotation, scale.X);
+	FVector lastGlobal = MathLib::LocalToGlobal(poly.TailNode->data.pos, origin, rotation, scale.X);
 
 	int index = 0;
 	Polygon::Vertex* currentVertex = poly.HeadNode;
-	while(currentVertex->NextNode != poly.HeadNode){
+	do{
 	
-		FVector globalVertexPos = MathLib::LocalToGlobal(currentVertex->pos, origin, rotation, scale.X);
+		FVector globalVertexPos = MathLib::LocalToGlobal(currentVertex->data.pos, origin, rotation, scale.X);
 
 		// Draw Vertex
-		switch(currentVertex->type){
+		switch(currentVertex->data.type){
 			case Polygon::NONE:
 				DrawDebugSphere(GetWorld(), globalVertexPos, 25, 5, FColor::Black, true, -1.0f);
 				break;
@@ -106,12 +133,14 @@ void UWall_Cutter_Test::Draw_Polygon(Polygon poly, FString nameOfDraw, bool draw
 		lastGlobal = globalVertexPos;
 
 		// Draw vector type
-		FVector indexTextPos = cutter->actor_rotation.RotateVector(FVector(100, currentVertex->pos.X, currentVertex->pos.Y - 10));
+		FVector indexTextPos = cutter->actor_rotation.RotateVector(FVector(100, currentVertex->data.pos.X, currentVertex->data.pos.Y - 10));
 		FString indexText = FString::FromInt(index);
 		index++;
 
 		DrawDebugString(GetWorld(), indexTextPos, indexText, GetOwner(), FColor::Blue, -1.f, false, 2.0f);
-	}
+
+		currentVertex = currentVertex->NextNode;
+	}while(currentVertex != poly.HeadNode);
 }
 
 
@@ -125,7 +154,7 @@ void UWall_Cutter_Test::Draw_Cut_Poly() {
 }
 
 void UWall_Cutter_Test::Draw_Wall_Intercepts() {
-	Draw_Polygon(cutter->wall_polygon, "Wall Polygon: Intercepts",true);
+	Draw_Polygon(cutter->cut_polygon_out, "Wall Polygon: Intercepts",true);
 }
 
 void UWall_Cutter_Test::Draw_Shrapnel() {
@@ -144,13 +173,13 @@ void UWall_Cutter_Test::Step_Through_Draw() {
 	UKismetSystemLibrary::FlushDebugStrings(GetWorld());
 
 	// Find current edge for wall_polygon
-	FVector2D a_start = currentX->pos;
-	FVector2D a_end = currentX->NextNode->pos;
+	FVector2D a_start = currentX->data.pos;
+	FVector2D a_end = currentX->NextNode->data.pos;
 	MathLib::EDGE a = { a_start, a_end };
 
 	// Find current edge for cut_polygon
-	FVector2D b_start = currentY->pos;
-	FVector2D b_end = currentY->NextNode->pos;
+	FVector2D b_start = currentY->data.pos;
+	FVector2D b_end = currentY->NextNode->data.pos;
 	MathLib::EDGE b = { b_start, b_end };
 
 	FVector2D out;
@@ -204,17 +233,19 @@ void UWall_Cutter_Test::debug_print_polygon(Polygon poly, Polygon otherPoly, FSt
 	out += name + ": ";
 
 	Polygon::Vertex* x = poly.HeadNode;
-	while(x->NextNode != poly.HeadNode){
+	while(x->NextNode->data != poly.HeadNode->data){
 
-		if (x->type == checkType) {
+		if (x->data.type == checkType) {
 
-			out += "[" + Vector2DToString(x->pos) + "]" + "->" + "[" + Vector2DToString(x->intercept_link->pos) + "]";
+			out += "[" + Vector2DToString(x->data.pos) + "]" + "->" + "[" + Vector2DToString(x->intercept_link->data.pos) + "]";
 		}
 		else {
-			out += "[" + Vector2DToString(x->pos) + "]";
+			out += "[" + Vector2DToString(x->data.pos) + "]";
 		}
 
 		out += ", ";
+
+		x = x->NextNode;
 	}
 
 	out.RemoveFromEnd(", ");
