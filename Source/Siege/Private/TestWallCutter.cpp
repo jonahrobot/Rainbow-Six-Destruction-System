@@ -5,6 +5,8 @@
 
 #define TEST_FLAGS EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_TwoSquaresOverlap, "WallCutter.TwoSquaresOverlap", TEST_FLAGS)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_RectangleSplitTest, "WallCutter.RectangleSplitTest", TEST_FLAGS)
+
 
 class TestWallCutter {
 
@@ -39,7 +41,7 @@ public:
 		bool passedAllTests = true;
 
 		// Init test case
-		core->start_cut_polygon = x.in_cut_poly;
+		core->start_cut_polygon = Polygon(x.in_cut_poly);
 
 		Polygon expected_wall_poly = Polygon(x.out_wall_poly);
 		Polygon expected_cut_poly = Polygon(x.out_cut_poly);
@@ -84,5 +86,21 @@ bool WallCutter_TwoSquaresOverlap::RunTest(const FString& Parameters) {
 		}
 	};
 	
+	return TestWallCutter::ProcessTestCase(x);
+}
+
+bool WallCutter_RectangleSplitTest::RunTest(const FString& Parameters) {
+
+	TestWallCutter::CutTestCase x{
+		"Rectangle Split Test",																				// Name
+		"(0.5,2),(-0.5,2),(-0.5,-2),(0.5,-2)",																// Cut Wall in
+		"(1,1),(0.5,1,EXIT),(-0.5,1,ENTRY),(-1,1),(-1,-1),(-0.5,-1,EXIT),(0.5,-1,ENTRY),(1,-1)",			// Wall Out
+		"(0.5,2),(-0.5,2),(-0.5,1,ENTRY),(-0.5,-1,EXIT),(-0.5,-2),(0.5,-2),(0.5,-1,ENTRY),(0.5,1,EXIT)",	// Cut Out
+		{																									// Regions out
+			"(-0.5,1,ENTRY),(-0.5,-1,EXIT),(-1,-1),(-1,1)",
+			"(0.5,-1,ENTRY),(0.5,1,EXIT),(1,1),(1,-1)"
+		}
+	};
+
 	return TestWallCutter::ProcessTestCase(x);
 }

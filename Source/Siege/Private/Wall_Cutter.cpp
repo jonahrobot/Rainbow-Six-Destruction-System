@@ -83,12 +83,8 @@ void UWall_Cutter::Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon) {
 
 	for (Polygon::Vertex* wall_vertex : wall_polygon) {
 
-		if (wall_vertex->data.type != Polygon::NONE) continue;
-
 		for (Polygon::Vertex* cut_vertex : cut_polygon) {
-
-			if (cut_vertex->data.type != Polygon::NONE) continue;
-
+			
 			// Find current edge for wall_polygon
 			MathLib::EDGE a = { wall_vertex->data.pos, wall_vertex->NextNode->data.pos };
 
@@ -103,11 +99,17 @@ void UWall_Cutter::Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon) {
 			}
 
 			// If intercept found -
-
+			
+			// Get new point
 			Polygon::InterceptTypes intercept_type = getInterceptType(out, b.end);
+			Polygon::VertexData new_point = { out,intercept_type };
 
-			Polygon::Vertex* insert_into_wall = wall_polygon.Insert({ out,intercept_type }, wall_vertex);
-			Polygon::Vertex* insert_into_cut = cut_polygon.Insert({ out, intercept_type }, cut_vertex);
+			// Check for repeat
+			if (new_point == wall_vertex->data || new_point == cut_vertex->data) continue;
+
+			// Add to wall!
+			Polygon::Vertex* insert_into_wall = wall_polygon.Insert(new_point, wall_vertex);
+			Polygon::Vertex* insert_into_cut = cut_polygon.Insert(new_point, cut_vertex);
 
 			// Create intercept link (ENTRY links in wall_polygon) (EXIT links in cut_polygon)
 			if (intercept_type == Polygon::ENTRY) insert_into_wall->intercept_link = insert_into_cut;
