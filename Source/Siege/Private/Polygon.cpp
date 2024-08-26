@@ -11,7 +11,8 @@ Polygon::~Polygon()
 void Polygon::initalizeWithString(FString polygonString) {
 
 	polygonString.RemoveSpacesInline();
-	FRegexPattern Pattern("\\((-?\\d+),(-?\\d+)(?:,([^)]+))?\\)");
+
+	FRegexPattern Pattern("\\((-?\\d+(?:.\\d+)?),(-?\\d+(?:.\\d+)?)(?:,([^)]+))?\\)");
 	FRegexMatcher Matcher(Pattern, polygonString);
 
 	while (Matcher.FindNext()) {

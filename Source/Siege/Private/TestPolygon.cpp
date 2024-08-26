@@ -141,16 +141,16 @@ bool TestInsert::RunTest(const FString& Parameters) {
 
 bool TestStringConstructor::RunTest(const FString& Parameters) {
 
-	Polygon stringBased = Polygon("(2, 2), (0, 2), (0, 1, ENTRY), (0, 0), (1, 0, EXIT), (2, 0)");
+	Polygon stringBased = Polygon("(2, 2), (0, 2), (0, 1.5, ENTRY), (0, 0), (1, 0, EXIT), (2.3, 0)");
 
 	Polygon base = Polygon();
 
 	base.Add({ FVector2D(2, 2) });
 	base.Add({ FVector2D(0, 2) });
-	base.Add({ FVector2D(0, 1), Polygon::ENTRY });
+	base.Add({ FVector2D(0, 1.5), Polygon::ENTRY });
 	base.Add({ FVector2D(0, 0) });
 	base.Add({ FVector2D(1, 0), Polygon::EXIT });
-	base.Add({ FVector2D(2, 0) });
+	base.Add({ FVector2D(2.3, 0) });
 
 	TestEqual("Polygon: StringConstructor: String creates correct Polygon", stringBased, base);
 

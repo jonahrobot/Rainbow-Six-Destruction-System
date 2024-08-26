@@ -169,6 +169,10 @@ public:
             return false;
         }
 
+        if (vertexA == nullptr || vertexB == nullptr) {
+            return (vertexA == nullptr && vertexB == nullptr);
+        }
+
         do {
 
             if (vertexA->data != vertexB->data) {
