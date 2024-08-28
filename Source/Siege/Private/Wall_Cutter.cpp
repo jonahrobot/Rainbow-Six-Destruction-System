@@ -105,7 +105,8 @@ void UWall_Cutter::Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon) {
 			Polygon::VertexData new_point = { out,intercept_type };
 
 			// Check for repeat
-			if (new_point == wall_vertex->data || new_point == cut_vertex->data) continue;
+			if (new_point.pos == wall_vertex->data.pos || new_point.pos == cut_vertex->data.pos) continue;
+			if (new_point.pos == wall_vertex->NextNode->data.pos || new_point.pos == cut_vertex->NextNode->data.pos) continue;
 
 			// Add to wall!
 			Polygon::Vertex* insert_into_wall = wall_polygon.Insert(new_point, wall_vertex);

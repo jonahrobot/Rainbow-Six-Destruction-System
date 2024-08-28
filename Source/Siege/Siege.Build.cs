@@ -7,8 +7,9 @@ public class Siege : ModuleRules
 	public Siege(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+        OptimizeCode = CodeOptimization.Never;
+
+        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
         
 
         // Uncomment if you are using Slate UI

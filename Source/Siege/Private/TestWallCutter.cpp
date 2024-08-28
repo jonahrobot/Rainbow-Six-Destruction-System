@@ -38,7 +38,7 @@ public:
 		core->actor_rotation = FRotator::ZeroRotator;
 		core->start_wall_polygon = Polygon("(1,1),(-1,1),(-1,-1),(1,-1)");
 
-		bool passedAllTests = true;
+		int testsPassed = 0;
 
 		// Init test case
 		core->start_cut_polygon = Polygon(x.in_cut_poly);
@@ -50,8 +50,8 @@ public:
 		core->cutWall();
 
 		// Test Wall
-		passedAllTests = TestEqual("WallCutter:" + x.testName + " Check wall polygon correct failed", core->wall_polygon_out, expected_wall_poly);
-		passedAllTests = TestEqual("WallCutter:" + x.testName + " Check cut polygon correct failed", core->cut_polygon_out, expected_cut_poly);
+		testsPassed += TestEqual("WallCutter:" + x.testName + " Check wall polygon correct failed", core->wall_polygon_out, expected_wall_poly);
+		testsPassed += TestEqual("WallCutter:" + x.testName + " Check cut polygon correct failed", core->cut_polygon_out, expected_cut_poly);
 
 		// Test Regions
 		for (int i = 0; i < x.out_regions.Num(); i++) {
@@ -59,17 +59,16 @@ public:
 			// Check if matching region exists
 			if (i >= core->regions.Num()) {
 				UE_LOG(LogTemp, Warning, TEXT("WallCutter: %s Expected %d regions, got %d."), *(x.testName), x.out_regions.Num(), core->regions.Num());
-				passedAllTests = false;
 			}
 			else {
 
 				// Test if Regions match
 				Polygon expected_region = Polygon(x.out_regions[i]);
-				passedAllTests = TestEqual("WallCutter:" + x.testName + " Out region " + FString::FromInt(i) + " does not match expected region.", core->regions[i], expected_region);
+				testsPassed += TestEqual("WallCutter:" + x.testName + " Out region " + FString::FromInt(i) + " does not match expected region.", core->regions[i], expected_region);
 			}
 		}
 
-		return passedAllTests;
+		return testsPassed == 3;
 	}
 };
 
