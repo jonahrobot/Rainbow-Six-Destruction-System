@@ -85,11 +85,13 @@ void UWall_Cutter_Test::Step_Right() {
 	Step_Through_Draw();
 }
 
-void UWall_Cutter_Test::Draw_Polygon(Polygon poly, FString nameOfDraw, bool drawEdges) {
+void UWall_Cutter_Test::Draw_Polygon(Polygon poly, FString nameOfDraw, bool drawEdges, bool erasePast = true) {
 
 	// Clear past draws
-	UKismetSystemLibrary::FlushPersistentDebugLines(GetWorld());
-	UKismetSystemLibrary::FlushDebugStrings(GetWorld());
+	if (erasePast) {
+		UKismetSystemLibrary::FlushPersistentDebugLines(GetWorld());
+		UKismetSystemLibrary::FlushDebugStrings(GetWorld());
+	}
 
 	// Log drawing
 	if (GEngine) {
@@ -158,8 +160,12 @@ void UWall_Cutter_Test::Draw_Wall_Intercepts() {
 }
 
 void UWall_Cutter_Test::Draw_Shrapnel() {
+	
+	UKismetSystemLibrary::FlushPersistentDebugLines(GetWorld());
+	UKismetSystemLibrary::FlushDebugStrings(GetWorld());
+
 	for (Polygon shrapnel_polgyon : cutter->regions) {
-		Draw_Polygon(shrapnel_polgyon, "Showing: Shrapnel Polygon", true);
+		Draw_Polygon(shrapnel_polgyon, "Showing: Shrapnel Polygon", true,false);
 	}
 }
 

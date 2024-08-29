@@ -33,7 +33,7 @@ private:
 	void Step_Through_Draw();
 	void Draw_Shrapnel();
 
-	void Draw_Polygon(Polygon poly, FString nameOfDraw, bool drawEdges);
+	void Draw_Polygon(Polygon poly, FString nameOfDraw, bool drawEdges, bool erasePast);
 
 	FVector origin;
 	FRotator rotation;
