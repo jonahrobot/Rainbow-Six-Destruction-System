@@ -79,6 +79,14 @@ Polygon::InterceptTypes UWall_Cutter::getInterceptType(FVector2D const& intercep
 
 #pragma endregion Helper Methods
 
+bool UWall_Cutter::CompareFVector(FVector2D a, FVector2D b){
+
+	// 0.00 precision 
+	return	std::roundf(a.X * 100) == std::roundf(b.X * 100) &&
+			std::roundf(a.Y * 100) == std::roundf(b.Y * 100);
+
+}
+
 void UWall_Cutter::Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon) {
 
 	for (Polygon::Vertex* wall_vertex : wall_polygon) {
@@ -105,8 +113,11 @@ void UWall_Cutter::Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon) {
 			Polygon::VertexData new_point = { out,intercept_type };
 
 			// Check for repeat
-			if (new_point.pos == wall_vertex->data.pos || new_point.pos == cut_vertex->data.pos) continue;
-			if (new_point.pos == wall_vertex->NextNode->data.pos || new_point.pos == cut_vertex->NextNode->data.pos) continue;
+
+			if (CompareFVector(new_point.pos, wall_vertex->data.pos)) continue;
+			if (CompareFVector(new_point.pos, cut_vertex->data.pos)) continue;
+			if (CompareFVector(new_point.pos, wall_vertex->NextNode->data.pos)) continue;
+			if (CompareFVector(new_point.pos, cut_vertex->NextNode->data.pos)) continue;
 
 			// Add to wall!
 			Polygon::Vertex* insert_into_wall = wall_polygon.Insert(new_point, wall_vertex);

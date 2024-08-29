@@ -71,6 +71,13 @@ bool Polygon::pointInsidePolygon(FVector2D const& point){
 		float x2 = a_end.X;
 		float y2 = a_end.Y;
 
+		// Check if point is on line edge
+		FVector2D directionOfLine = a_end - a_start;
+		FVector2D pointProjectionToLine = a_start + ((FVector2D::DotProduct(point - a_start, directionOfLine) / (directionOfLine.SizeSquared()) * directionOfLine));
+		if (FVector2D::Distance(pointProjectionToLine,point) < 0.001) {
+			return true;
+		}
+
 		// This is magic idk what is going on here
 		if ((point.Y < y1) != (point.Y < y2)) {
 			if (point.X < (x1 + ((point.Y - y1) / (y2 - y1)) * (x2 - x1))) {

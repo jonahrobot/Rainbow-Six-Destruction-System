@@ -237,9 +237,18 @@ bool TestInsidePolygon::RunTest(const FString& Parameters) {
 
 	Polygon p1 = Polygon("(1,1),(-1,1),(-1,-1),(1,-1)");
 
-	TestTrue("Polygon: Test point inside polygon",p1.pointInsidePolygon(FVector2D(0, 0)));
-	TestTrue("Polygon: Test point inside polygon by pixel", p1.pointInsidePolygon(FVector2D(0, 0.99)));
-	TestFalse("Polygon: Test point outside polygon", p1.pointInsidePolygon(FVector2D(10, 10)));
+	// Test Inside Caught
+	TestTrue("Polygon: InsidePolygon: TopCenter",p1.pointInsidePolygon(FVector2D(0,1)));
+	TestTrue("Polygon: InsidePolygon: BottomCenter", p1.pointInsidePolygon(FVector2D(0, -1)));
+	TestTrue("Polygon: InsidePolygon: MidLeft", p1.pointInsidePolygon(FVector2D(-1, 0)));
+	TestTrue("Polygon: InsidePolygon: MidRight", p1.pointInsidePolygon(FVector2D(1, 0)));
+	TestTrue("Polygon: InsidePolygon: Interior", p1.pointInsidePolygon(FVector2D(0.3, -0.5)));
+
+	// Test Outside Caught
+	TestFalse("Polygon: InsidePolygon: Off_TopCenter", p1.pointInsidePolygon(FVector2D(0, 1.1)));
+	TestFalse("Polygon: InsidePolygon: Off_BottomCenter", p1.pointInsidePolygon(FVector2D(0, -1.1)));
+	TestFalse("Polygon: InsidePolygon: Off_MidLeft", p1.pointInsidePolygon(FVector2D(-1.1, 0)));
+	TestFalse("Polygon: InsidePolygon: Off_MidRight", p1.pointInsidePolygon(FVector2D(1.1, 0)));
 
 	return true;
 }

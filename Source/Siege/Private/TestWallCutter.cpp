@@ -67,8 +67,8 @@ public:
 				testsPassed += TestEqual("WallCutter:" + x.testName + " Out region " + FString::FromInt(i) + " does not match expected region.", core->regions[i], expected_region);
 			}
 		}
-
-		return testsPassed == 3;
+		// Test both regions + Wall Polygon and Cut Polygon ended up correct
+		return testsPassed == 2 + x.out_regions.Num();
 	}
 };
 
