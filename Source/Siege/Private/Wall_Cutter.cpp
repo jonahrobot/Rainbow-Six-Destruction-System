@@ -32,6 +32,31 @@ void UWall_Cutter::BeginPlay()
 	actor_origin = GetOwner()->GetActorLocation();
 	actor_rotation = GetOwner()->GetActorRotation();
 
+	mesh = GetOwner()->FindComponentByClass<UProceduralMeshComponent>();
+
+	// Create wall
+	TArray<FVector> vertices = {FVector(0,0,0),FVector(0,100,0),FVector(100,100,0),FVector(100,0,0)};
+	FJsonSerializableArrayInt triangles = { 0,1,2,2,3,0 };
+	TArray<FVector> normals;
+	TArray<FVector2d> uv0 = { FVector2d(0,0),FVector2d(0,1),FVector2d(1,1),FVector2d(1,0) };
+	TArray<FColor> vertexColors;
+	TArray<FProcMeshTangent> tangents;
+
+	/**
+	 *	Create/replace a section for this procedural mesh component.
+	 *	This function is deprecated for Blueprints because it uses the unsupported 'Color' type. Use new 'Create Mesh Section' function which uses LinearColor instead.
+	 *	@param	SectionIndex		Index of the section to create or replace.
+	 *	@param	Vertices			Vertex buffer of all vertex positions to use for this mesh section.
+	 *	@param	Triangles			Index buffer indicating which vertices make up each triangle. Length must be a multiple of 3.
+	 *	@param	Normals				Optional array of normal vectors for each vertex. If supplied, must be same length as Vertices array.
+	 *	@param	UV0					Optional array of texture co-ordinates for each vertex. If supplied, must be same length as Vertices array.
+	 *	@param	VertexColors		Optional array of colors for each vertex. If supplied, must be same length as Vertices array.
+	 *	@param	Tangents			Optional array of tangent vector for each vertex. If supplied, must be same length as Vertices array.
+	 *	@param	bCreateCollision	Indicates whether collision should be created for this section. This adds significant cost.
+	 */
+	mesh->CreateMeshSection(0,vertices,triangles,normals,uv0,vertexColors,tangents,true);
+
+	// Else
 	wall_polygon_out.Empty();
 	cut_polygon_out.Empty();
 

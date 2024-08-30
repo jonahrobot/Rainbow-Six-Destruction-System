@@ -6,7 +6,7 @@
 #define TEST_FLAGS EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_TwoSquaresOverlap, "WallCutter.TwoSquaresOverlap", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_RectangleSplitTest, "WallCutter.RectangleSplitTest", TEST_FLAGS)
-
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_RectangleSplitTest_Flipped, "WallCutter.RectangleSplitTestFlipped", TEST_FLAGS)
 
 class TestWallCutter {
 
@@ -93,6 +93,22 @@ bool WallCutter_RectangleSplitTest::RunTest(const FString& Parameters) {
 	TestWallCutter::CutTestCase x{
 		"Rectangle Split Test",																				// Name
 		"(0.5,2),(-0.5,2),(-0.5,-2),(0.5,-2)",																// Cut Wall in
+		"(1,1),(0.5,1,EXIT),(-0.5,1,ENTRY),(-1,1),(-1,-1),(-0.5,-1,EXIT),(0.5,-1,ENTRY),(1,-1)",			// Wall Out
+		"(0.5,2),(-0.5,2),(-0.5,1,ENTRY),(-0.5,-1,EXIT),(-0.5,-2),(0.5,-2),(0.5,-1,ENTRY),(0.5,1,EXIT)",	// Cut Out
+		{																									// Regions out
+			"(-0.5,1,ENTRY),(-0.5,-1,EXIT),(-1,-1),(-1,1)",
+			"(0.5,-1,ENTRY),(0.5,1,EXIT),(1,1),(1,-1)"
+		}
+	};
+
+	return TestWallCutter::ProcessTestCase(x);
+}
+
+bool WallCutter_RectangleSplitTest_Flipped::RunTest(const FString& Parameters) {
+
+	TestWallCutter::CutTestCase x{
+		"Rectangle Split Test",																				// Name
+		"(0.5,-2),(-0.5,-2),(-0.5,2),(0.5,2)",																// Cut Wall in
 		"(1,1),(0.5,1,EXIT),(-0.5,1,ENTRY),(-1,1),(-1,-1),(-0.5,-1,EXIT),(0.5,-1,ENTRY),(1,-1)",			// Wall Out
 		"(0.5,2),(-0.5,2),(-0.5,1,ENTRY),(-0.5,-1,EXIT),(-0.5,-2),(0.5,-2),(0.5,-1,ENTRY),(0.5,1,EXIT)",	// Cut Out
 		{																									// Regions out

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Polygon.h"
+#include "ProceduralMeshComponent.h"
 #include "Components/ActorComponent.h"
 #include "Wall_Cutter.generated.h"
 
@@ -39,7 +40,9 @@ private:
 
 	FVector actor_scale;
 	FVector actor_origin;
-	FRotator actor_rotation;
+	FRotator actor_rotation; 
+
+	UProceduralMeshComponent* mesh = nullptr;
 
 	bool CompareFVector(FVector2D a, FVector2D b);
 

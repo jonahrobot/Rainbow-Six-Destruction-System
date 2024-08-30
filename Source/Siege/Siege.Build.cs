@@ -9,7 +9,7 @@ public class Siege : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         OptimizeCode = CodeOptimization.Never;
 
-        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" , "ProceduralMeshComponent" });
         
 
         // Uncomment if you are using Slate UI
