@@ -50,6 +50,10 @@ private:
 
 	Polygon::InterceptTypes getInterceptType(FVector2D const& intercept_point, FVector2D const& next_point);
 
+	void convertRegionToRenderable(TArray<FVector>& out_vertices, FJsonSerializableArrayInt& out_triangles, Polygon region);
+
+	void renderRegion(TArray<FVector>& vertices, FJsonSerializableArrayInt& triangles);
+
 
 protected:
 	virtual void BeginPlay() override;

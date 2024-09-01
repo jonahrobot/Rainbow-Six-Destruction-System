@@ -103,7 +103,7 @@ public:
         Vertex* HeadNode;
     };
     
-private:
+public:
     Vertex* HeadNode;
     Vertex* TailNode;
     int size;
@@ -203,6 +203,8 @@ public:
 
     Vertex* Add(VertexData X);
 
+    void Remove(Vertex* x);
+
     void Empty();
 
     bool IsEmpty() const; 
@@ -214,11 +216,4 @@ public:
     PolygonIterator end() {
         return PolygonIterator(HeadNode,1,HeadNode);
     }
-
-    friend class UWall_Cutter_Test;
-    friend class TestAdd;
-    friend class TestInsert;
-    friend class TestUniqueData;
-    friend class TestEmpty;
-       
 };

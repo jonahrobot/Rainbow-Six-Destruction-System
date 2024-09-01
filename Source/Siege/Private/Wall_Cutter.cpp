@@ -34,28 +34,6 @@ void UWall_Cutter::BeginPlay()
 
 	mesh = GetOwner()->FindComponentByClass<UProceduralMeshComponent>();
 
-	// Create wall
-	TArray<FVector> vertices = {FVector(0,0,0),FVector(0,100,0),FVector(100,100,0),FVector(100,0,0)};
-	FJsonSerializableArrayInt triangles = { 0,1,2,2,3,0 };
-	TArray<FVector> normals;
-	TArray<FVector2d> uv0 = { FVector2d(0,0),FVector2d(0,1),FVector2d(1,1),FVector2d(1,0) };
-	TArray<FColor> vertexColors;
-	TArray<FProcMeshTangent> tangents;
-
-	/**
-	 *	Create/replace a section for this procedural mesh component.
-	 *	This function is deprecated for Blueprints because it uses the unsupported 'Color' type. Use new 'Create Mesh Section' function which uses LinearColor instead.
-	 *	@param	SectionIndex		Index of the section to create or replace.
-	 *	@param	Vertices			Vertex buffer of all vertex positions to use for this mesh section.
-	 *	@param	Triangles			Index buffer indicating which vertices make up each triangle. Length must be a multiple of 3.
-	 *	@param	Normals				Optional array of normal vectors for each vertex. If supplied, must be same length as Vertices array.
-	 *	@param	UV0					Optional array of texture co-ordinates for each vertex. If supplied, must be same length as Vertices array.
-	 *	@param	VertexColors		Optional array of colors for each vertex. If supplied, must be same length as Vertices array.
-	 *	@param	Tangents			Optional array of tangent vector for each vertex. If supplied, must be same length as Vertices array.
-	 *	@param	bCreateCollision	Indicates whether collision should be created for this section. This adds significant cost.
-	 */
-	mesh->CreateMeshSection(0,vertices,triangles,normals,uv0,vertexColors,tangents,true);
-
 	// Else
 	wall_polygon_out.Empty();
 	cut_polygon_out.Empty();
@@ -184,7 +162,56 @@ void UWall_Cutter::cutWall() {
 			regions.Add(new_region);
 		}
 	}
+
+	//for (Polygon x : regions) {
+	//	TArray<FVector> renderableVertices;
+	//	FJsonSerializableArrayInt triangles;
+
+	//	//convertRegionToRenderable(renderableVertices, triangles, x);
+
+	//	//renderRegion(renderableVertices, triangles);
+	//}
 }
+
+void UWall_Cutter::convertRegionToRenderable(TArray<FVector>& out_vertices, FJsonSerializableArrayInt& out_triangles, Polygon region) {
+
+	Polygon::Vertex* start = region.HeadNode;
+
+	// Loop around vertices x
+		// If vertex points outside of shape: go next
+		// Create polygon with x, x->next and x->prev
+		// For all points
+			// If point is in triangle: go next
+		// We have our triangle
+			// Remove x from our list
+			// Add our triangle
+		// 
+				
+
+}
+
+void UWall_Cutter::renderRegion(TArray<FVector>& vertices, FJsonSerializableArrayInt& triangles) {
+
+	TArray<FVector> normals;
+	TArray<FVector2d> uv0;
+	TArray<FColor> vertexColors;
+	TArray<FProcMeshTangent> tangents;
+
+	/**
+	 *	Create/replace a section for this procedural mesh component.
+	 *	This function is deprecated for Blueprints because it uses the unsupported 'Color' type. Use new 'Create Mesh Section' function which uses LinearColor instead.
+	 *	@param	SectionIndex		Index of the section to create or replace.
+	 *	@param	Vertices			Vertex buffer of all vertex positions to use for this mesh section.
+	 *	@param	Triangles			Index buffer indicating which vertices make up each triangle. Length must be a multiple of 3.
+	 *	@param	Normals				Optional array of normal vectors for each vertex. If supplied, must be same length as Vertices array.
+	 *	@param	UV0					Optional array of texture co-ordinates for each vertex. If supplied, must be same length as Vertices array.
+	 *	@param	VertexColors		Optional array of colors for each vertex. If supplied, must be same length as Vertices array.
+	 *	@param	Tangents			Optional array of tangent vector for each vertex. If supplied, must be same length as Vertices array.
+	 *	@param	bCreateCollision	Indicates whether collision should be created for this section. This adds significant cost.
+	 */
+	mesh->CreateMeshSection(0, vertices, triangles, normals, uv0, vertexColors, tangents, true);
+}
+
 
 Polygon UWall_Cutter::walkLoop(TArray<Polygon::VertexData> &OUT_visited, Polygon::Vertex*  start, int direction) {
 

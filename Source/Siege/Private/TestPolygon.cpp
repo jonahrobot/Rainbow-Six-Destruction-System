@@ -73,6 +73,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestInsert, "Polygon.TestInsert", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestEmpty, "Polygon.TestEmpty", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestUniqueData, "Polygon.TestUniqueData", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestInsidePolygon, "Polygon.TestInsidePolygon", TEST_FLAGS)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestRemovePolygon, "Polygon.TestRemovePolygon", TEST_FLAGS)
 
 bool TestAdd::RunTest(const FString& Parameters) {
 
@@ -249,6 +250,37 @@ bool TestInsidePolygon::RunTest(const FString& Parameters) {
 	TestFalse("Polygon: InsidePolygon: Off_BottomCenter", p1.pointInsidePolygon(FVector2D(0, -1.1)));
 	TestFalse("Polygon: InsidePolygon: Off_MidLeft", p1.pointInsidePolygon(FVector2D(-1.1, 0)));
 	TestFalse("Polygon: InsidePolygon: Off_MidRight", p1.pointInsidePolygon(FVector2D(1.1, 0)));
+
+	return true;
+}
+
+bool TestRemovePolygon::RunTest(const FString& Parameters) {
+
+	Polygon p1 = Polygon("(1,1)");
+
+	Polygon::VertexData v1 = { FVector2D(0, 0) };
+	Polygon::VertexData v2 = { FVector2D(10, 10) };
+
+	// (1,1),(0,0),(10,10)
+
+	Polygon::Vertex* middleNode = p1.Add(v1);
+	Polygon::Vertex* endNode = p1.Add(v2);
+
+	p1.Remove(middleNode);
+
+	// (1,1),(10,10)
+	Polygon testA = Polygon("(1,1),(10,10)");
+
+	TestEqual("Polygon: Remove: Middle node removed", p1, testA);
+	TestEqual("Polygon: Remove: Size decreased", p1.size, 2);
+
+	p1.Remove(p1.HeadNode);
+	p1.Remove(p1.TailNode);
+
+	// Should be empty
+	Polygon testB;
+	TestEqual("Polygon: Remove: Middle node removed", p1, testB);
+	TestEqual("Polygon: Remove: Size decreased", p1.size, 0);
 
 	return true;
 }

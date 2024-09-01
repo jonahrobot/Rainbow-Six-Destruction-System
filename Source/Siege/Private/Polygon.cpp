@@ -172,3 +172,28 @@ void Polygon::Empty() {
 bool Polygon::IsEmpty() const{
 	return size == 0;
 }
+
+
+void Polygon::Remove(Vertex* x) {
+
+	if (size == 1 || size == 0) {
+		Empty(); return;
+	}
+
+	// Hook up neighbors
+	x->PrevNode->NextNode = x->NextNode;
+	x->NextNode->PrevNode = x->PrevNode;
+
+	// Hook up new Head or Tail
+	if (x == TailNode) {
+		TailNode = x->PrevNode;
+	}
+
+	if (x == HeadNode) {
+		HeadNode = x->NextNode;
+	}
+
+	size -= 1;
+
+	delete x;
+}
