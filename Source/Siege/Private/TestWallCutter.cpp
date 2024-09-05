@@ -6,6 +6,8 @@
 #define TEST_FLAGS EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_TwoSquaresOverlap, "WallCutter.TwoSquaresOverlap", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_RectangleSplitTest, "WallCutter.RectangleSplitTest", TEST_FLAGS)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_TriangulateTest, "WallCutter.TriangulateTest", TEST_FLAGS)
+
 
 class TestWallCutter {
 
@@ -46,7 +48,7 @@ public:
 		Polygon expected_cut_poly = Polygon(x.out_cut_poly);
 
 		// Preform cut
-		core->cutWall();
+		core->cutWall(false);
 
 		// Test Wall
 		testsPassed += TestEqual("WallCutter:" + x.testName + " Check wall polygon correct failed", core->wall_polygon_out, expected_wall_poly);
@@ -101,4 +103,17 @@ bool WallCutter_RectangleSplitTest::RunTest(const FString& Parameters) {
 	};
 
 	return TestWallCutter::ProcessTestCase(x);
+}
+
+bool WallCutter_TriangulateTest::RunTest(const FString& Parameters) {
+
+	Polygon poly = Polygon("(2,2),(0,2),(0,0),(2,0)");
+
+	UWall_Cutter* core = NewObject<UWall_Cutter>();
+
+	FJsonSerializableArrayInt vertexMap = core->startRenderProcess(poly);
+
+
+
+
 }

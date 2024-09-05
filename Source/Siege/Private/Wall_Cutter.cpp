@@ -24,7 +24,7 @@ void UWall_Cutter::BeginPlay()
 
 	if (IsValid(FirstLocalPlayer) && IsValid(FirstLocalPlayer->InputComponent)) {
 
-		FirstLocalPlayer->InputComponent->BindAction(FName("Explode"), IE_Pressed, this, &UWall_Cutter::cutWall);
+		FirstLocalPlayer->InputComponent->BindAction(FName("Explode"), IE_Pressed, this, &UWall_Cutter::startInput);
 
 	}
 
@@ -52,6 +52,10 @@ void UWall_Cutter::BeginPlay()
 #pragma endregion Setup
 
 #pragma region Helper Methods
+
+void UWall_Cutter::startInput() {
+	cutWall(true);
+}
 
 void UWall_Cutter::addCutPoint(FVector2D const& PointToAdd) {
 	start_cut_polygon.Add({ PointToAdd, Polygon::NONE });
@@ -140,7 +144,7 @@ void UWall_Cutter::Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon) {
  *	@cut_shape the polygon we want to cut from the wall
  *		- cut_shape vertices must be ordered clockwise
  */
-void UWall_Cutter::cutWall() {
+void UWall_Cutter::cutWall(bool shouldRenderRegion) {
 
 	if (start_cut_polygon.Num() <= 2) return;
 
@@ -163,34 +167,106 @@ void UWall_Cutter::cutWall() {
 		}
 	}
 
-	//for (Polygon x : regions) {
-	//	TArray<FVector> renderableVertices;
-	//	FJsonSerializableArrayInt triangles;
+	if (shouldRenderRegion == false) return;
 
-	//	//convertRegionToRenderable(renderableVertices, triangles, x);
-
-	//	//renderRegion(renderableVertices, triangles);
-	//}
+	for (Polygon x : regions) {
+		startRenderProcess(x);
+	}
 }
 
-void UWall_Cutter::convertRegionToRenderable(TArray<FVector>& out_vertices, FJsonSerializableArrayInt& out_triangles, Polygon region) {
+FJsonSerializableArrayInt UWall_Cutter::startRenderProcess(Polygon regionToRender) {
 
-	Polygon::Vertex* start = region.HeadNode;
+	TArray<FVector2D> renderableVertices;
+	FJsonSerializableArrayInt triangles;
 
-	// Loop around vertices x
-		// If vertex points outside of shape: go next
-		// Create polygon with x, x->next and x->prev
-		// For all points
-			// If point is in triangle: go next
-		// We have our triangle
-			// Remove x from our list
-			// Add our triangle
-		// 
+	bool failed = triangulatePolygon(renderableVertices, triangles, regionToRender);
+
+	if (failed) {
+		UE_LOG(LogTemp, Warning, TEXT("Failed to convert region to renderable"));
+	}
+
+	// Convert to 3D space!
+
+	TArray <FVector> CastedVerticesTo3D;
+	for (FVector2D y : renderableVertices) {
+
+		UE_LOG(LogTemp, Warning, TEXT("Rendered one vertex"));
+		CastedVerticesTo3D.Add(FVector3d(y.X, y.Y, 0));
+		//CastedVerticesTo3D.Add(MathLib::LocalToGlobal(y, actor_origin, actor_rotation, actor_scale.X));
+	}
+
+	renderPolygon(CastedVerticesTo3D, triangles);
+	
+	return triangles;
+}
+
+bool UWall_Cutter::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializableArrayInt& out_triangles, Polygon region) {
+
+	Polygon::Vertex* currentNode = region.HeadNode;
+
+	// Convert polygon vertices 
+	for (Polygon::Vertex* current_vertex : region) {
+		out_vertices.Add(current_vertex->data.pos);
+	}
+
+	// Create tris
+	int failCase = 0;
+	while (region.Num() > 3 && failCase < 100) {
+		failCase++;
+		
+		Polygon triangle;
+
+		triangle.Add(currentNode->data);
+		triangle.Add(currentNode->PrevNode->data);
+		triangle.Add(currentNode->NextNode->data);
+
+		// Check if Current Node is in or out of region
+		FVector2D center_to_left = currentNode->PrevNode->data.pos - currentNode->data.pos;
+		FVector2D center_to_right = currentNode->NextNode->data.pos - currentNode->data.pos;
+
+		if (FVector2D::CrossProduct(center_to_left, center_to_right) < 0) {
+			continue;
+		}
+
+		bool isValidTriangle = false;
+
+		// Check if any point is inside the triangle
+		for (Polygon::Vertex* other : region) {
+			if (triangle.pointInsidePolygon(other->data.pos)) {
+				isValidTriangle = true;
+				break;
+			}
+		}
+
+		// If triangle -> Convert to Int array structure
+		if(isValidTriangle){
+			// Remove current node from region
+			region.Remove(currentNode);
+
+			// Add triangle to out_triangles encoding it with our out_verticies
+			
+			for (Polygon::Vertex* vertexInTri : triangle) {
 				
+				// Find matching 
+				int index = out_vertices.IndexOfByKey(vertexInTri->data.pos);
 
+				if (index != INDEX_NONE) {
+					out_triangles.Add(index);
+				}
+				else {
+					UE_LOG(LogTemp, Warning, TEXT("Failed to add Tri"));
+				}
+			}
+		}
+			
+		// Go to next vertex
+		currentNode = currentNode->NextNode;
+	}
+
+	return failCase < 100;
 }
 
-void UWall_Cutter::renderRegion(TArray<FVector>& vertices, FJsonSerializableArrayInt& triangles) {
+void UWall_Cutter::renderPolygon(TArray<FVector>& vertices, FJsonSerializableArrayInt& triangles) {
 
 	TArray<FVector> normals;
 	TArray<FVector2d> uv0;

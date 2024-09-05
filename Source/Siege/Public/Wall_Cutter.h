@@ -22,7 +22,9 @@ public:
 	 *
 	 *	@cut_polygon the polygon we want to cut from the wall
 	 */
-	void cutWall();
+	void startInput();
+	FJsonSerializableArrayInt startRenderProcess(Polygon regionToRender);
+	void cutWall(bool shouldRenderRegion);
 	void Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon);
 
 	// Replicate input from user for testing
@@ -50,9 +52,9 @@ private:
 
 	Polygon::InterceptTypes getInterceptType(FVector2D const& intercept_point, FVector2D const& next_point);
 
-	void convertRegionToRenderable(TArray<FVector>& out_vertices, FJsonSerializableArrayInt& out_triangles, Polygon region);
+	bool triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializableArrayInt& out_triangles, Polygon region);
 
-	void renderRegion(TArray<FVector>& vertices, FJsonSerializableArrayInt& triangles);
+	void renderPolygon(TArray<FVector>& vertices, FJsonSerializableArrayInt& triangles);
 
 
 protected:
