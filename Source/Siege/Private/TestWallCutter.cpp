@@ -111,9 +111,16 @@ bool WallCutter_TriangulateTest::RunTest(const FString& Parameters) {
 
 	UWall_Cutter* core = NewObject<UWall_Cutter>();
 
-	FJsonSerializableArrayInt vertexMap = core->startRenderProcess(poly);
+	UWall_Cutter::renderOut vertexMap = core->startRenderProcess(poly, true);
+
+	TestEqual("WallCutter: Found verticies do not match expected values.", vertexMap.renderableVertices, { FVector2D(2,2), FVector2D(0,2), FVector2D(0,0), FVector2D(2,0) });
+	TestEqual("WallCutter: Found triangles do not match expected values.", vertexMap.triangles, { 0,1,3,1,2,3 });
 
 
+	//UE_LOG(LogTemp, Warning, TEXT("Size of vertexMap: %d"), vertexMap.triangles.Num());
+	//for (int x : vertexMap.triangles) {
+	//	UE_LOG(LogTemp, Warning, TEXT("%d"),x);
+	//}
 
-
+	return true;
 }

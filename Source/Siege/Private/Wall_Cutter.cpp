@@ -43,10 +43,10 @@ void UWall_Cutter::BeginPlay()
 	start_wall_polygon.Add({ FVector2D(-actor_scale.Y, -actor_scale.Z),Polygon::NONE });
 	start_wall_polygon.Add({ FVector2D(actor_scale.Y, -actor_scale.Z),Polygon::NONE });
 
-	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, -actor_scale.Z - 20), Polygon::NONE });
-	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, 0), Polygon::NONE });
-	//start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
-	//start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 20), Polygon::NONE });
+	/*start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, -actor_scale.Z - 20), Polygon::NONE });
+	start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, 0), Polygon::NONE });
+	start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
+	start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 20), Polygon::NONE });*/
 }
 
 #pragma endregion Setup
@@ -170,34 +170,47 @@ void UWall_Cutter::cutWall(bool shouldRenderRegion) {
 	if (shouldRenderRegion == false) return;
 
 	for (Polygon x : regions) {
-		startRenderProcess(x);
+		startRenderProcess(x, false);
 	}
 }
 
-FJsonSerializableArrayInt UWall_Cutter::startRenderProcess(Polygon regionToRender) {
+UWall_Cutter::renderOut UWall_Cutter::startRenderProcess(Polygon regionToRender, bool testing) {
 
 	TArray<FVector2D> renderableVertices;
 	FJsonSerializableArrayInt triangles;
 
-	bool failed = triangulatePolygon(renderableVertices, triangles, regionToRender);
-
-	if (failed) {
-		UE_LOG(LogTemp, Warning, TEXT("Failed to convert region to renderable"));
-	}
+	triangulatePolygon(renderableVertices, triangles, regionToRender);
 
 	// Convert to 3D space!
-
 	TArray <FVector> CastedVerticesTo3D;
 	for (FVector2D y : renderableVertices) {
 
-		UE_LOG(LogTemp, Warning, TEXT("Rendered one vertex"));
-		CastedVerticesTo3D.Add(FVector3d(y.X, y.Y, 0));
-		//CastedVerticesTo3D.Add(MathLib::LocalToGlobal(y, actor_origin, actor_rotation, actor_scale.X));
+		CastedVerticesTo3D.Add(MathLib::LocalToGlobal(y, FVector::ZeroVector, FRotator::ZeroRotator, actor_scale.X));
 	}
 
-	renderPolygon(CastedVerticesTo3D, triangles);
+	if (testing == false) {
+
+		FString renderStr = "";
+		FString triStr = "";
+
+		for (const FVector3d &nextVert : CastedVerticesTo3D) {
+			renderStr += nextVert.ToString() + ",";
+		}
+
+		for (int32 nextPoint : triangles) {
+			triStr.AppendInt(nextPoint);
+			triStr +=  ",";
+		}
+		UE_LOG(LogTemp, Warning, TEXT("EXPECTED TRI LENGTH: %d"), triangles.Num());
+
+		UE_LOG(LogTemp, Warning, TEXT("renderableVerts: %s"), *renderStr);
+
+		UE_LOG(LogTemp, Warning, TEXT("Triangles: %s"), *triStr);
+
+		renderPolygon(CastedVerticesTo3D, triangles);
+	}
 	
-	return triangles;
+	return { renderableVertices,triangles };
 }
 
 bool UWall_Cutter::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializableArrayInt& out_triangles, Polygon region) {
@@ -211,20 +224,25 @@ bool UWall_Cutter::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSeri
 
 	// Create tris
 	int failCase = 0;
-	while (region.Num() > 3 && failCase < 100) {
+	UE_LOG(LogTemp, Warning, TEXT("Triangulating region size: %d"), region.Num());
+
+	while (region.Num() >= 3 && failCase < 100) {
 		failCase++;
+
+		Polygon::Vertex* next = currentNode->NextNode;
 		
 		Polygon triangle;
 
 		triangle.Add(currentNode->data);
-		triangle.Add(currentNode->PrevNode->data);
 		triangle.Add(currentNode->NextNode->data);
+		triangle.Add(currentNode->PrevNode->data);
 
 		// Check if Current Node is in or out of region
-		FVector2D center_to_left = currentNode->PrevNode->data.pos - currentNode->data.pos;
-		FVector2D center_to_right = currentNode->NextNode->data.pos - currentNode->data.pos;
+		FVector2D center_to_left = currentNode->NextNode->data.pos - currentNode->data.pos;
+		FVector2D center_to_right = currentNode->PrevNode->data.pos - currentNode->data.pos;
 
-		if (FVector2D::CrossProduct(center_to_left, center_to_right) < 0) {
+		if (FVector2D::CrossProduct(center_to_left, center_to_right) > 0) {
+			currentNode = next;
 			continue;
 		}
 
@@ -260,7 +278,7 @@ bool UWall_Cutter::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSeri
 		}
 			
 		// Go to next vertex
-		currentNode = currentNode->NextNode;
+		currentNode = next;
 	}
 
 	return failCase < 100;

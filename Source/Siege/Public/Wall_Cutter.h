@@ -23,7 +23,13 @@ public:
 	 *	@cut_polygon the polygon we want to cut from the wall
 	 */
 	void startInput();
-	FJsonSerializableArrayInt startRenderProcess(Polygon regionToRender);
+
+	struct renderOut {
+		TArray<FVector2D> renderableVertices;
+		FJsonSerializableArrayInt triangles;
+	};
+
+	renderOut startRenderProcess(Polygon regionToRender, bool testing);
 	void cutWall(bool shouldRenderRegion);
 	void Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon);
 
