@@ -43,10 +43,10 @@ void UWall_Cutter::BeginPlay()
 	start_wall_polygon.Add({ FVector2D(-actor_scale.Y, -actor_scale.Z),Polygon::NONE });
 	start_wall_polygon.Add({ FVector2D(actor_scale.Y, -actor_scale.Z),Polygon::NONE });
 
-	/*start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, -actor_scale.Z - 20), Polygon::NONE });
-	start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, 0), Polygon::NONE });
-	start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
-	start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 20), Polygon::NONE });*/
+	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, -actor_scale.Z - 20), Polygon::NONE });
+	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, 0), Polygon::NONE });
+	//start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
+	//start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 20), Polygon::NONE });
 }
 
 #pragma endregion Setup
@@ -177,16 +177,61 @@ void UWall_Cutter::cutWall(bool shouldRenderRegion) {
 UWall_Cutter::renderOut UWall_Cutter::startRenderProcess(Polygon regionToRender, bool testing) {
 
 	TArray<FVector2D> renderableVertices;
-	FJsonSerializableArrayInt triangles;
+	FJsonSerializableArrayInt trianglesStart;
 
-	triangulatePolygon(renderableVertices, triangles, regionToRender);
+	triangulatePolygon(renderableVertices, trianglesStart, regionToRender);
 
 	// Convert to 3D space!
 	TArray <FVector> CastedVerticesTo3D;
 	for (FVector2D y : renderableVertices) {
-
-		CastedVerticesTo3D.Add(MathLib::LocalToGlobal(y, FVector::ZeroVector, FRotator::ZeroRotator, actor_scale.X));
+		CastedVerticesTo3D.Add(FVector(actor_scale.X, y.X, y.Y));
 	}
+
+	FJsonSerializableArrayInt triangles = trianglesStart;
+
+	// Add other face
+	FJsonSerializableArrayInt tri;
+
+	for (int32 y : trianglesStart) {
+
+		// For each tri
+		tri.Add(y + renderableVertices.Num());
+
+		if (tri.Num() == 3) {
+
+			// Flip triangle
+			for (int i = tri.Num()-1; i >= 0; i--) {
+				triangles.Add(tri[i]);
+			}
+			tri.Empty();
+		}
+	}
+
+	// Add new points!
+	for (FVector2D y : renderableVertices) {
+		CastedVerticesTo3D.Add(FVector(-actor_scale.X, y.X, y.Y));
+	}
+
+	int x = renderableVertices.Num() - 1;
+	// For each side
+	for (int y = 0; y < renderableVertices.Num(); y++) {
+
+		// Have edge from x -> y
+		
+		// Add tri from x->y->yoffset
+		// Add tri from yoffset->xoffset->x
+		triangles.Add(x);
+		triangles.Add(y + renderableVertices.Num());
+		triangles.Add(y);
+
+
+		triangles.Add(y + renderableVertices.Num());
+		triangles.Add(x);
+		triangles.Add(x + renderableVertices.Num());
+
+		x = y;
+	}
+
 
 	if (testing == false) {
 
@@ -303,6 +348,7 @@ void UWall_Cutter::renderPolygon(TArray<FVector>& vertices, FJsonSerializableArr
 	 *	@param	Tangents			Optional array of tangent vector for each vertex. If supplied, must be same length as Vertices array.
 	 *	@param	bCreateCollision	Indicates whether collision should be created for this section. This adds significant cost.
 	 */
+
 	mesh->CreateMeshSection(0, vertices, triangles, normals, uv0, vertexColors, tangents, true);
 }
 
