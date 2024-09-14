@@ -7,6 +7,8 @@
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_TwoSquaresOverlap, "WallCutter.TwoSquaresOverlap", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_RectangleSplitTest, "WallCutter.RectangleSplitTest", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_TriangulateTest, "WallCutter.TriangulateTest", TEST_FLAGS)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_ExtrudeTest, "WallCutter.ExtrudeTest", TEST_FLAGS)
+
 
 
 class TestWallCutter {
@@ -107,20 +109,119 @@ bool WallCutter_RectangleSplitTest::RunTest(const FString& Parameters) {
 
 bool WallCutter_TriangulateTest::RunTest(const FString& Parameters) {
 
-	Polygon poly = Polygon("(2,2),(0,2),(0,0),(2,0)");
+	Polygon poly = Polygon("(2,2),(2,0),(0,0),(0,2)");
 
 	UWall_Cutter* core = NewObject<UWall_Cutter>();
 
-	UWall_Cutter::renderOut vertexMap = core->startRenderProcess(poly, true);
+	TArray<FVector2D> out_vertices;
+	FJsonSerializableArrayInt out_triangles;
+	core->triangulatePolygon(out_vertices, out_triangles, poly);
 
-	TestEqual("WallCutter: Found verticies do not match expected values.", vertexMap.renderableVertices, { FVector2D(2,2), FVector2D(0,2), FVector2D(0,0), FVector2D(2,0) });
-	TestEqual("WallCutter: Found triangles do not match expected values.", vertexMap.triangles, { 0,1,3,1,2,3 });
+	TestEqual("WallCutter: Found verticies do not match expected values.", out_vertices, { FVector2D(2,2),  FVector2D(2,0), FVector2D(0,0), FVector2D(0,2)});
+	TestEqual("WallCutter: Found triangles do not match expected values.", out_triangles, { 0,1,3,1,2,3 });
+
+	return true;
+}
+
+bool WallCutter_ExtrudeTest::RunTest(const FString& Parameters) {
+
+	Polygon input = Polygon(R"((-249.999985, -16.478102, ENTRY), (-195.448657, -29.212806, NONE), (-138.992821, -34.614438, NONE), "
+		"(-97.101171, -35.850874, NONE), (-54.033271, -34.226103, NONE), (-25.803016, -37.322383, NONE), (-17.744017, -36.969197, NONE), (-9.676088, -36.608087, NONE), "
+		"(-5.638574, -36.424547, NONE), (45.26098, 59.993483, NONE), (45.26098, 59.993483, NONE), (45.26098, 59.993483, NONE), (49.389202, 60.249123, NONE),"
+		"(77.889357, 62.090876, NONE), (100.854706, 72.786052, NONE), (122.908255, 81.310403, NONE), (150.800836, 96.783303, NONE), (172.653196, 117.147103, NONE),"
+		"(182.121048, 147.558851, NONE), (182.584432, 191.621302, NONE), (139.556278, 233.011042, NONE), (127.548462, 250.000015, EXIT), (250, 250, NONE), (250, -250, NONE), (-250, -250, NONE))");
+
+	FJsonSerializableArrayInt expectedTriangles = {0,1,24,1,2,24,2,3,24,3,4,24,4,5,24,5,6,24,6,7,
+		24,7,8,24,14,15,13,20,21,19,21,22,19,22,23,19,24,8,23,8,9,23,19,23,18,18,23,17,17,23,16,16,
+		23,15,15,23,13,13,23,12,23,9,12,9,9,12,9,9,12,49,26,25,49,27,26,49,28,27,49,29,28,49,30,29,
+		49,31,30,49,32,31,49,33,32,38,40,39,44,46,45,44,47,46,44,48,47,48,33,49,48,34,33,43,48,44,42,
+		48,43,41,48,42,40,48,41,38,48,40,37,48,38,37,34,48,37,34,34,37,34,34,24,25,0,25,24,49,0,26,1,26,
+		0,25,1,27,2,27,1,26,2,28,3,28,2,27,3,29,4,29,3,28,4,30,5,30,4,29,5,31,6,31,5,30,6,32,7,32,6,31,7,
+		33,8,33,7,32,8,34,9,34,8,33,9,35,10,35,9,34,10,36,11,36,10,35,11,37,12,37,11,36,12,38,13,38,12,37,
+		13,39,14,39,13,38,14,40,15,40,14,39,15,41,16,41,15,40,16,42,17,42,16,41,17,43,18,43,17,42,18,44,19,
+		44,18,43,19,45,20,45,19,44,20,46,21,46,20,45,21,47,22,47,21,46,22,48,23,48,22,47,23,49,24,49,23,48};
 
 
-	//UE_LOG(LogTemp, Warning, TEXT("Size of vertexMap: %d"), vertexMap.triangles.Num());
-	//for (int x : vertexMap.triangles) {
-	//	UE_LOG(LogTemp, Warning, TEXT("%d"),x);
-	//}
+	TArray<FVector> castedVertices = {
+		FVector(100.000,-250.000,-16.478),
+		FVector(100.000,-195.449,-29.213),
+		FVector(100.000, -138.993, -34.614),
+		FVector(100.000, -97.101, -35.851),
+		FVector(100.000, -54.033, -34.226),
+		FVector(100.000, -25.803, -37.322),
+		FVector(100.000, -17.744, -36.969),
+		FVector(100.000, -9.676, -36.608),
+		FVector(100.000, -5.639, -36.425),
+		FVector(100.000, 45.261, 59.993),
+		FVector(100.000, 45.261, 59.993),
+		FVector(100.000, 45.261, 59.993),
+		FVector(100.000, 49.389, 60.249),
+		FVector(100.000, 77.889, 62.091),
+		FVector(100.000, 100.855, 72.786),
+		FVector(100.000, 122.908, 81.310),
+		FVector(100.000, 150.801, 96.783),
+		FVector(100.000, 172.653, 117.147),
+		FVector(100.000, 182.121, 147.559),
+		FVector(100.000, 182.584, 191.621),
+		FVector(100.000, 139.556, 233.011),
+		FVector(100.000, 127.548, 250.000),
+		FVector(100.000, 250.000, 250.000),
+		FVector(100.000, 250.000, -250.000),
+		FVector(100.000, -250.000, -250.000),
+		FVector(-100.000, -250.000, -16.478),
+		FVector(-100.000, -195.449, -29.213),
+		FVector(-100.000, -138.993, -34.614),
+		FVector(-100.000, -97.101, -35.851),
+		FVector(-100.000, -54.033, -34.226),
+		FVector(-100.000, -25.803, -37.322),
+		FVector(-100.000, -17.744, -36.969),
+		FVector(-100.000, -9.676, -36.608),
+		FVector(-100.000, -5.639, -36.425),
+		FVector(-100.000, 45.261, 59.993),
+		FVector(-100.000, 45.261, 59.993),
+		FVector(-100.000, 45.261, 59.993),
+		FVector(-100.000, 49.389, 60.249),
+		FVector(-100.000, 77.889, 62.091),
+		FVector(-100.000, 100.855, 72.786),
+		FVector(-100.000, 122.908, 81.310),
+		FVector(-100.000, 150.801, 96.783),
+		FVector(-100.000, 172.653, 117.147),
+		FVector(-100.000, 182.121, 147.559),
+		FVector(-100.000, 182.584, 191.621),
+		FVector(-100.000, 139.556, 233.011),
+		FVector(-100.000, 127.548, 250.000),
+		FVector(-100.000, 250.000, 250.000),
+		FVector(-100.000, 250.000, -250.000),
+		FVector(-100.000, -250.000, -250.000)
+	};
+
+	UWall_Cutter* core = NewObject<UWall_Cutter>();
+
+	UWall_Cutter::renderOut output = core->startRenderProcess(input, true);
+
+	bool vertexEqual = true;
+
+	if (output.renderableVertices.Num() != castedVertices.Num()) {
+		vertexEqual = false;
+	}
+
+	if (vertexEqual) {
+		for (int i = 0; i < castedVertices.Num(); ++i) {
+
+			FVector A = castedVertices[i];
+			FVector B = output.renderableVertices[i];
+
+			if( std::roundf(A.X) != std::roundf(B.X) ||
+				std::roundf(A.Y) != std::roundf(B.Y) ||
+				std::roundf(A.Z) != std::roundf(B.Z) ){ 
+					vertexEqual = false;
+					break;
+			}
+		}
+	}
+
+	TestEqual("WallCutter: Test Extrude: Vertex Check ", vertexEqual, true);
+	TestEqual("WallCutter: Test Extrude: Tri Check ", output.triangles, expectedTriangles);
 
 	return true;
 }

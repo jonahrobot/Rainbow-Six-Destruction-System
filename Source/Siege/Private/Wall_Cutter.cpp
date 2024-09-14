@@ -181,6 +181,8 @@ UWall_Cutter::renderOut UWall_Cutter::startRenderProcess(Polygon regionToRender,
 
 	triangulatePolygon(renderableVertices, trianglesStart, regionToRender);
 
+	// ** NOT TESTED **  // 
+
 	// Convert to 3D space!
 	TArray <FVector> CastedVerticesTo3D;
 	for (FVector2D y : renderableVertices) {
@@ -232,30 +234,11 @@ UWall_Cutter::renderOut UWall_Cutter::startRenderProcess(Polygon regionToRender,
 		x = y;
 	}
 
-
 	if (testing == false) {
-
-		FString renderStr = "";
-		FString triStr = "";
-
-		for (const FVector3d &nextVert : CastedVerticesTo3D) {
-			renderStr += nextVert.ToString() + ",";
-		}
-
-		for (int32 nextPoint : triangles) {
-			triStr.AppendInt(nextPoint);
-			triStr +=  ",";
-		}
-		UE_LOG(LogTemp, Warning, TEXT("EXPECTED TRI LENGTH: %d"), triangles.Num());
-
-		UE_LOG(LogTemp, Warning, TEXT("renderableVerts: %s"), *renderStr);
-
-		UE_LOG(LogTemp, Warning, TEXT("Triangles: %s"), *triStr);
-
 		renderPolygon(CastedVerticesTo3D, triangles);
 	}
 	
-	return { renderableVertices,triangles };
+	return { CastedVerticesTo3D,triangles };
 }
 
 bool UWall_Cutter::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializableArrayInt& out_triangles, Polygon region) {
@@ -269,9 +252,9 @@ bool UWall_Cutter::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSeri
 
 	// Create tris
 	int failCase = 0;
-	UE_LOG(LogTemp, Warning, TEXT("Triangulating region size: %d"), region.Num());
 
 	while (region.Num() >= 3 && failCase < 100) {
+
 		failCase++;
 
 		Polygon::Vertex* next = currentNode->NextNode;
@@ -291,13 +274,16 @@ bool UWall_Cutter::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSeri
 			continue;
 		}
 
-		bool isValidTriangle = false;
+		bool isValidTriangle = true;
 
 		// Check if any point is inside the triangle
 		for (Polygon::Vertex* other : region) {
-			if (triangle.pointInsidePolygon(other->data.pos)) {
-				isValidTriangle = true;
-				break;
+			FVector2D checkingPos = other->data.pos;
+			if (checkingPos != currentNode->data.pos && checkingPos != currentNode->NextNode->data.pos && checkingPos != currentNode->PrevNode->data.pos) {
+				if (triangle.pointInsidePolygon(other->data.pos)) {
+					isValidTriangle = false;
+					break;
+				}
 			}
 		}
 
