@@ -56,5 +56,6 @@ protected:
 	FVector startCameraRotation;
 
 private:
+	float timeSinceLastCut = 0.0f;
 	bool laserCutting = false;
 };

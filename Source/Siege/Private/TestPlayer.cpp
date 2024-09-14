@@ -44,7 +44,12 @@ void ATestPlayer::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	if (laserCutting) {
-		SendCutPoint();
+		timeSinceLastCut += DeltaTime;
+
+		if (timeSinceLastCut >= 0.05f) {
+			SendCutPoint();
+			timeSinceLastCut = 0.0f;
+		}
 	}
 
 }
