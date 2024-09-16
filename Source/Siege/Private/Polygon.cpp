@@ -89,6 +89,127 @@ bool Polygon::pointInsidePolygon(FVector2D const& point){
 	return overlaps % 2 == 1;
 }
 
+bool Polygon::extrudePolygon(float length, TArray<FVector>& out_vertices, FJsonSerializableArrayInt& out_triangles, TArray<FVector2D>& in_vertices, FJsonSerializableArrayInt& in_triangles) {
+	
+	// Set up
+	out_triangles = in_triangles;
+
+	// Create 3D Points
+	for (FVector2D y : in_vertices) {
+		out_vertices.Add(FVector(length, y.X, y.Y));
+	}
+
+	// Add other face
+	FJsonSerializableArrayInt tri;
+
+	for (int32 y : in_triangles) {
+		tri.Add(y + in_vertices.Num());
+		if (tri.Num() == 3) {
+			for (int i = tri.Num() - 1; i >= 0; i--) {
+				out_triangles.Add(tri[i]);
+			}
+			tri.Empty();
+		}
+	}
+	
+	for (FVector2D y : in_vertices) {
+		out_vertices.Add(FVector(-length, y.X, y.Y));
+	}
+
+	// Add connecting faces
+	int x = in_vertices.Num() - 1;
+	for (int y = 0; y < in_vertices.Num(); y++) {
+
+		out_triangles.Add(x);
+		out_triangles.Add(y + in_vertices.Num());
+		out_triangles.Add(y);
+
+		out_triangles.Add(y + in_vertices.Num());
+		out_triangles.Add(x);
+		out_triangles.Add(x + in_vertices.Num());
+
+		x = y;
+	}
+
+	return true;
+}
+
+bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializableArrayInt& out_triangles) {
+
+	Polygon::Vertex* currentNode = HeadNode;
+
+	// Convert polygon vertices 
+	for (Polygon::Vertex* current_vertex : *this) {
+		out_vertices.Add(current_vertex->data.pos);
+	}
+
+	// Create tris
+	int failCase = 0;
+
+	while (Num() >= 3 && failCase < 100) {
+
+		failCase++;
+
+		Polygon::Vertex* next = currentNode->NextNode;
+
+		Polygon triangle;
+
+		triangle.Add(currentNode->data);
+		triangle.Add(currentNode->NextNode->data);
+		triangle.Add(currentNode->PrevNode->data);
+
+		// Check if Current Node is in or out of region
+		FVector2D center_to_left = currentNode->NextNode->data.pos - currentNode->data.pos;
+		FVector2D center_to_right = currentNode->PrevNode->data.pos - currentNode->data.pos;
+
+		if (FVector2D::CrossProduct(center_to_left, center_to_right) > 0) {
+			currentNode = next;
+			continue;
+		}
+
+		bool isValidTriangle = true;
+
+		// Check if any point is inside the triangle
+		for (Polygon::Vertex* other : *this) {
+			FVector2D checkingPos = other->data.pos;
+			if (checkingPos != currentNode->data.pos && checkingPos != currentNode->NextNode->data.pos && checkingPos != currentNode->PrevNode->data.pos) {
+				if (triangle.pointInsidePolygon(other->data.pos)) {
+					isValidTriangle = false;
+					break;
+				}
+			}
+		}
+
+		// If triangle -> Convert to Int array structure
+		if (isValidTriangle) {
+			// Remove current node from region
+			Remove(currentNode);
+
+			// Add triangle to out_triangles encoding it with our out_verticies
+
+			for (Polygon::Vertex* vertexInTri : triangle) {
+
+				// Find matching 
+				int index = out_vertices.IndexOfByKey(vertexInTri->data.pos);
+
+				if (index != INDEX_NONE) {
+					out_triangles.Add(index);
+				}
+				else {
+					UE_LOG(LogTemp, Warning, TEXT("Failed to add Tri"));
+				}
+			}
+		}
+
+		// Go to next vertex
+		currentNode = next;
+	}
+
+	return failCase < 100;
+}
+
+
+
 int Polygon::Num() const{
 	return size;
 }

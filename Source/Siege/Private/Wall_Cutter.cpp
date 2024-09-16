@@ -169,175 +169,47 @@ void UWall_Cutter::cutWall(bool shouldRenderRegion) {
 
 	if (shouldRenderRegion == false) return;
 
-	for (Polygon x : regions) {
-		startRenderProcess(x, false);
+	for (Polygon toRender : regions) {
+		renderPolygon(toRender, false);
 	}
 }
 
-UWall_Cutter::renderOut UWall_Cutter::startRenderProcess(Polygon regionToRender, bool testing) {
+UWall_Cutter::renderOut UWall_Cutter::renderPolygon(Polygon regionToRender, bool testing) {
 
 	TArray<FVector2D> renderableVertices;
 	FJsonSerializableArrayInt trianglesStart;
 
-	triangulatePolygon(renderableVertices, trianglesStart, regionToRender);
+	regionToRender.triangulatePolygon(renderableVertices, trianglesStart);
 
-	// ** NOT TESTED **  // 
+	TArray<FVector> vertices3D;
+	FJsonSerializableArrayInt triangles3D = trianglesStart;
 
-	// Convert to 3D space!
-	TArray <FVector> CastedVerticesTo3D;
-	for (FVector2D y : renderableVertices) {
-		CastedVerticesTo3D.Add(FVector(actor_scale.X, y.X, y.Y));
-	}
-
-	FJsonSerializableArrayInt triangles = trianglesStart;
-
-	// Add other face
-	FJsonSerializableArrayInt tri;
-
-	for (int32 y : trianglesStart) {
-
-		// For each tri
-		tri.Add(y + renderableVertices.Num());
-
-		if (tri.Num() == 3) {
-
-			// Flip triangle
-			for (int i = tri.Num()-1; i >= 0; i--) {
-				triangles.Add(tri[i]);
-			}
-			tri.Empty();
-		}
-	}
-
-	// Add new points!
-	for (FVector2D y : renderableVertices) {
-		CastedVerticesTo3D.Add(FVector(-actor_scale.X, y.X, y.Y));
-	}
-
-	int x = renderableVertices.Num() - 1;
-	// For each side
-	for (int y = 0; y < renderableVertices.Num(); y++) {
-
-		// Have edge from x -> y
-		
-		// Add tri from x->y->yoffset
-		// Add tri from yoffset->xoffset->x
-		triangles.Add(x);
-		triangles.Add(y + renderableVertices.Num());
-		triangles.Add(y);
-
-
-		triangles.Add(y + renderableVertices.Num());
-		triangles.Add(x);
-		triangles.Add(x + renderableVertices.Num());
-
-		x = y;
-	}
+	regionToRender.extrudePolygon(actor_scale.X, vertices3D, triangles3D, renderableVertices, trianglesStart);
 
 	if (testing == false) {
-		renderPolygon(CastedVerticesTo3D, triangles);
+		TArray<FVector> normals;
+		TArray<FVector2d> uv0;
+		TArray<FColor> vertexColors;
+		TArray<FProcMeshTangent> tangents;
+
+		/**
+		 *	Create/replace a section for this procedural mesh component.
+		 *	This function is deprecated for Blueprints because it uses the unsupported 'Color' type. Use new 'Create Mesh Section' function which uses LinearColor instead.
+		 *	@param	SectionIndex		Index of the section to create or replace.
+		 *	@param	Vertices			Vertex buffer of all vertex positions to use for this mesh section.
+		 *	@param	Triangles			Index buffer indicating which vertices make up each triangle. Length must be a multiple of 3.
+		 *	@param	Normals				Optional array of normal vectors for each vertex. If supplied, must be same length as Vertices array.
+		 *	@param	UV0					Optional array of texture co-ordinates for each vertex. If supplied, must be same length as Vertices array.
+		 *	@param	VertexColors		Optional array of colors for each vertex. If supplied, must be same length as Vertices array.
+		 *	@param	Tangents			Optional array of tangent vector for each vertex. If supplied, must be same length as Vertices array.
+		 *	@param	bCreateCollision	Indicates whether collision should be created for this section. This adds significant cost.
+		 */
+
+		mesh->CreateMeshSection(0, vertices3D, triangles3D, normals, uv0, vertexColors, tangents, true);
 	}
 	
-	return { CastedVerticesTo3D,triangles };
+	return { vertices3D,triangles3D };
 }
-
-bool UWall_Cutter::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializableArrayInt& out_triangles, Polygon region) {
-
-	Polygon::Vertex* currentNode = region.HeadNode;
-
-	// Convert polygon vertices 
-	for (Polygon::Vertex* current_vertex : region) {
-		out_vertices.Add(current_vertex->data.pos);
-	}
-
-	// Create tris
-	int failCase = 0;
-
-	while (region.Num() >= 3 && failCase < 100) {
-
-		failCase++;
-
-		Polygon::Vertex* next = currentNode->NextNode;
-		
-		Polygon triangle;
-
-		triangle.Add(currentNode->data);
-		triangle.Add(currentNode->NextNode->data);
-		triangle.Add(currentNode->PrevNode->data);
-
-		// Check if Current Node is in or out of region
-		FVector2D center_to_left = currentNode->NextNode->data.pos - currentNode->data.pos;
-		FVector2D center_to_right = currentNode->PrevNode->data.pos - currentNode->data.pos;
-
-		if (FVector2D::CrossProduct(center_to_left, center_to_right) > 0) {
-			currentNode = next;
-			continue;
-		}
-
-		bool isValidTriangle = true;
-
-		// Check if any point is inside the triangle
-		for (Polygon::Vertex* other : region) {
-			FVector2D checkingPos = other->data.pos;
-			if (checkingPos != currentNode->data.pos && checkingPos != currentNode->NextNode->data.pos && checkingPos != currentNode->PrevNode->data.pos) {
-				if (triangle.pointInsidePolygon(other->data.pos)) {
-					isValidTriangle = false;
-					break;
-				}
-			}
-		}
-
-		// If triangle -> Convert to Int array structure
-		if(isValidTriangle){
-			// Remove current node from region
-			region.Remove(currentNode);
-
-			// Add triangle to out_triangles encoding it with our out_verticies
-			
-			for (Polygon::Vertex* vertexInTri : triangle) {
-				
-				// Find matching 
-				int index = out_vertices.IndexOfByKey(vertexInTri->data.pos);
-
-				if (index != INDEX_NONE) {
-					out_triangles.Add(index);
-				}
-				else {
-					UE_LOG(LogTemp, Warning, TEXT("Failed to add Tri"));
-				}
-			}
-		}
-			
-		// Go to next vertex
-		currentNode = next;
-	}
-
-	return failCase < 100;
-}
-
-void UWall_Cutter::renderPolygon(TArray<FVector>& vertices, FJsonSerializableArrayInt& triangles) {
-
-	TArray<FVector> normals;
-	TArray<FVector2d> uv0;
-	TArray<FColor> vertexColors;
-	TArray<FProcMeshTangent> tangents;
-
-	/**
-	 *	Create/replace a section for this procedural mesh component.
-	 *	This function is deprecated for Blueprints because it uses the unsupported 'Color' type. Use new 'Create Mesh Section' function which uses LinearColor instead.
-	 *	@param	SectionIndex		Index of the section to create or replace.
-	 *	@param	Vertices			Vertex buffer of all vertex positions to use for this mesh section.
-	 *	@param	Triangles			Index buffer indicating which vertices make up each triangle. Length must be a multiple of 3.
-	 *	@param	Normals				Optional array of normal vectors for each vertex. If supplied, must be same length as Vertices array.
-	 *	@param	UV0					Optional array of texture co-ordinates for each vertex. If supplied, must be same length as Vertices array.
-	 *	@param	VertexColors		Optional array of colors for each vertex. If supplied, must be same length as Vertices array.
-	 *	@param	Tangents			Optional array of tangent vector for each vertex. If supplied, must be same length as Vertices array.
-	 *	@param	bCreateCollision	Indicates whether collision should be created for this section. This adds significant cost.
-	 */
-
-	mesh->CreateMeshSection(0, vertices, triangles, normals, uv0, vertexColors, tangents, true);
-}
-
 
 Polygon UWall_Cutter::walkLoop(TArray<Polygon::VertexData> &OUT_visited, Polygon::Vertex*  start, int direction) {
 

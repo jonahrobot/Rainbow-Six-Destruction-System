@@ -196,6 +196,10 @@ public:
 
     bool pointInsidePolygon(FVector2D const& point);
 
+    bool triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializableArrayInt& out_triangles);
+
+    bool extrudePolygon(float length, TArray<FVector>& out_vertices, FJsonSerializableArrayInt& out_triangles, TArray<FVector2D>& in_vertices, FJsonSerializableArrayInt& in_triangles);
+
     int Num() const;
 
     // Returns pointer to added Vertex

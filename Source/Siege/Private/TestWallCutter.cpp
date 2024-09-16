@@ -6,7 +6,6 @@
 #define TEST_FLAGS EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_TwoSquaresOverlap, "WallCutter.TwoSquaresOverlap", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_RectangleSplitTest, "WallCutter.RectangleSplitTest", TEST_FLAGS)
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_TriangulateTest, "WallCutter.TriangulateTest", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(WallCutter_ExtrudeTest, "WallCutter.ExtrudeTest", TEST_FLAGS)
 
 
@@ -107,22 +106,6 @@ bool WallCutter_RectangleSplitTest::RunTest(const FString& Parameters) {
 	return TestWallCutter::ProcessTestCase(x);
 }
 
-bool WallCutter_TriangulateTest::RunTest(const FString& Parameters) {
-
-	Polygon poly = Polygon("(2,2),(2,0),(0,0),(0,2)");
-
-	UWall_Cutter* core = NewObject<UWall_Cutter>();
-
-	TArray<FVector2D> out_vertices;
-	FJsonSerializableArrayInt out_triangles;
-	core->triangulatePolygon(out_vertices, out_triangles, poly);
-
-	TestEqual("WallCutter: Found verticies do not match expected values.", out_vertices, { FVector2D(2,2),  FVector2D(2,0), FVector2D(0,0), FVector2D(0,2)});
-	TestEqual("WallCutter: Found triangles do not match expected values.", out_triangles, { 0,1,3,1,2,3 });
-
-	return true;
-}
-
 bool WallCutter_ExtrudeTest::RunTest(const FString& Parameters) {
 
 	Polygon input = Polygon(R"((-249.999985, -16.478102, ENTRY), (-195.448657, -29.212806, NONE), (-138.992821, -34.614438, NONE), "
@@ -197,7 +180,7 @@ bool WallCutter_ExtrudeTest::RunTest(const FString& Parameters) {
 
 	UWall_Cutter* core = NewObject<UWall_Cutter>();
 
-	UWall_Cutter::renderOut output = core->startRenderProcess(input, true);
+	UWall_Cutter::renderOut output = core->renderPolygon(input, true);
 
 	bool vertexEqual = true;
 

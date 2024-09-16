@@ -74,6 +74,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestEmpty, "Polygon.TestEmpty", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestUniqueData, "Polygon.TestUniqueData", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestInsidePolygon, "Polygon.TestInsidePolygon", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestRemovePolygon, "Polygon.TestRemovePolygon", TEST_FLAGS)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestTriangulate, "Polygon.TestTriangulate", TEST_FLAGS)
 
 bool TestAdd::RunTest(const FString& Parameters) {
 
@@ -281,6 +282,20 @@ bool TestRemovePolygon::RunTest(const FString& Parameters) {
 	Polygon testB;
 	TestEqual("Polygon: Remove: Middle node removed", p1, testB);
 	TestEqual("Polygon: Remove: Size decreased", p1.size, 0);
+
+	return true;
+}
+
+bool TestTriangulate::RunTest(const FString& Parameters) {
+
+	Polygon poly = Polygon("(2,2),(2,0),(0,0),(0,2)");
+
+	TArray<FVector2D> out_vertices;
+	FJsonSerializableArrayInt out_triangles;
+	poly.triangulatePolygon(out_vertices, out_triangles);
+
+	TestEqual("WallCutter: Found verticies do not match expected values.", out_vertices, { FVector2D(2,2),  FVector2D(2,0), FVector2D(0,0), FVector2D(0,2) });
+	TestEqual("WallCutter: Found triangles do not match expected values.", out_triangles, { 0,1,3,1,2,3 });
 
 	return true;
 }

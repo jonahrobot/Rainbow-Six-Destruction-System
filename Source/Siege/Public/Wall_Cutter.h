@@ -29,15 +29,15 @@ public:
 		FJsonSerializableArrayInt triangles;
 	};
 
-	renderOut startRenderProcess(Polygon regionToRender, bool testing);
 	void cutWall(bool shouldRenderRegion);
 	void Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon);
-	bool triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializableArrayInt& out_triangles, Polygon region);
 
 	// Replicate input from user for testing
 	// Calls Cut_Wall with pre-defined shape
 		
 	void addCutPoint(FVector2D const& PointToAdd);
+
+	UWall_Cutter::renderOut renderPolygon(Polygon regionToRender, bool testing);
 
 private:
 	Polygon wall_polygon_out;
@@ -58,9 +58,6 @@ private:
 	Polygon walkLoop(TArray<Polygon::VertexData>& OUT_visited, Polygon::Vertex* start, int direction);
 
 	Polygon::InterceptTypes getInterceptType(FVector2D const& intercept_point, FVector2D const& next_point);
-
-	void renderPolygon(TArray<FVector>& vertices, FJsonSerializableArrayInt& triangles);
-
 
 protected:
 	virtual void BeginPlay() override;
