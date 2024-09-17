@@ -75,6 +75,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestUniqueData, "Polygon.TestUniqueData", TEST_
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestInsidePolygon, "Polygon.TestInsidePolygon", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestRemovePolygon, "Polygon.TestRemovePolygon", TEST_FLAGS)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestTriangulate, "Polygon.TestTriangulate", TEST_FLAGS)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestClockwiseCheck, "Polygon.TestClockwiseCheck", TEST_FLAGS)
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestSwapDirection, "Polygon.TestSwapDirection", TEST_FLAGS)
+
 
 bool TestAdd::RunTest(const FString& Parameters) {
 
@@ -294,8 +297,31 @@ bool TestTriangulate::RunTest(const FString& Parameters) {
 	FJsonSerializableArrayInt out_triangles;
 	poly.triangulatePolygon(out_vertices, out_triangles);
 
-	TestEqual("WallCutter: Found verticies do not match expected values.", out_vertices, { FVector2D(2,2),  FVector2D(2,0), FVector2D(0,0), FVector2D(0,2) });
-	TestEqual("WallCutter: Found triangles do not match expected values.", out_triangles, { 0,1,3,1,2,3 });
+	TestEqual("Polygon: Found verticies do not match expected values.", out_vertices, { FVector2D(2,2),  FVector2D(2,0), FVector2D(0,0), FVector2D(0,2) });
+	TestEqual("Polygon: Found triangles do not match expected values.", out_triangles, { 0,1,3,1,2,3 });
+
+	return true;
+}
+
+bool TestClockwiseCheck::RunTest(const FString& Parameters) {
+
+	Polygon A = Polygon("(2,2),(2,0),(0,0),(0,2)");	// Poly is clockwise
+	Polygon B = Polygon("(2,2),(0,2),(0,0),(2,0)");	// Poly is not clockwise
+
+	TestTrue("Polygon A should be clockwise", A.isPolygonClockwise());
+	TestFalse("Polygon B should Not be clockwise", B.isPolygonClockwise());
+
+	return true;
+}
+
+bool TestSwapDirection::RunTest(const FString& Parameters) {
+
+	Polygon Start = Polygon("(2,2),(2,0),(0,0),(0,2)");	
+	Polygon End = Polygon("(0,2),(0,0),(2,0),(2,2)");
+
+	Start.flipPolygonVertexOrder();
+
+	TestEqual("Polygon: Swap Dir Test: Start should become End", Start,End);
 
 	return true;
 }

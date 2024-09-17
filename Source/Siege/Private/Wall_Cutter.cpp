@@ -151,6 +151,14 @@ void UWall_Cutter::cutWall(bool shouldRenderRegion) {
 	wall_polygon_out = start_wall_polygon;
 	cut_polygon_out = start_cut_polygon;
 
+	if (cut_polygon_out.isPolygonClockwise()) {
+		cut_polygon_out.flipPolygonVertexOrder();
+	}
+
+	if (wall_polygon_out.isPolygonClockwise()) {
+		wall_polygon_out.flipPolygonVertexOrder();
+	}
+
     Add_Intercepts(wall_polygon_out, cut_polygon_out);
 
 	regions.Empty();
@@ -170,6 +178,11 @@ void UWall_Cutter::cutWall(bool shouldRenderRegion) {
 	if (shouldRenderRegion == false) return;
 
 	for (Polygon toRender : regions) {
+
+		if (toRender.isPolygonClockwise()) {
+			toRender.flipPolygonVertexOrder();
+		}
+
 		renderPolygon(toRender, false);
 	}
 }

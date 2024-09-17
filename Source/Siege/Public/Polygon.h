@@ -200,6 +200,10 @@ public:
 
     bool extrudePolygon(float length, TArray<FVector>& out_vertices, FJsonSerializableArrayInt& out_triangles, TArray<FVector2D>& in_vertices, FJsonSerializableArrayInt& in_triangles);
 
+    bool isPolygonClockwise();
+
+    void flipPolygonVertexOrder();
+
     int Num() const;
 
     // Returns pointer to added Vertex

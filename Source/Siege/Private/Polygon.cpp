@@ -318,3 +318,14 @@ void Polygon::Remove(Vertex* x) {
 
 	delete x;
 }
+
+bool Polygon::isPolygonClockwise() {
+
+
+
+	return true;
+}
+
+void Polygon::flipPolygonVertexOrder() {
+
+}
