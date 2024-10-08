@@ -3,6 +3,7 @@
 #include "Wall_Cutter.h"
 #include "MathLib.h"
 #include "Polygon.h"
+#include "Engine/StaticMeshActor.h"
 #include "Kismet/GameplayStatics.h"
 
 #pragma region Setup
@@ -47,6 +48,25 @@ void UWall_Cutter::BeginPlay()
 	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, 0), Polygon::NONE });
 	//start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
 	//start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 20), Polygon::NONE });
+	TArray<FVector2D> renderableVertices;
+	FJsonSerializableArrayInt trianglesStart;
+
+	Polygon test = start_wall_polygon;
+	test.flipPolygonVertexOrder();
+
+	test.triangulatePolygon(renderableVertices, trianglesStart);
+
+	TArray<FVector> vertices3D;
+	FJsonSerializableArrayInt triangles3D = trianglesStart;
+
+	test.extrudePolygon(actor_scale.X, vertices3D, triangles3D, renderableVertices, trianglesStart);
+
+	TArray<FVector> normals;
+	TArray<FVector2d> uv0;
+	TArray<FColor> vertexColors;
+	TArray<FProcMeshTangent> tangents;
+	mesh->CreateMeshSection(0, vertices3D, triangles3D, normals, uv0, vertexColors, tangents, true);
+
 }
 
 #pragma endregion Setup
@@ -185,9 +205,13 @@ void UWall_Cutter::cutWall(bool shouldRenderRegion) {
 
 		renderPolygon(toRender, false);
 	}
+
+	this->GetOwner()->Destroy();
 }
 
 UWall_Cutter::renderOut UWall_Cutter::renderPolygon(Polygon regionToRender, bool testing) {
+
+	Polygon input = regionToRender;
 
 	TArray<FVector2D> renderableVertices;
 	FJsonSerializableArrayInt trianglesStart;
@@ -218,9 +242,32 @@ UWall_Cutter::renderOut UWall_Cutter::renderPolygon(Polygon regionToRender, bool
 		 *	@param	bCreateCollision	Indicates whether collision should be created for this section. This adds significant cost.
 		 */
 
-		mesh->CreateMeshSection(0, vertices3D, triangles3D, normals, uv0, vertexColors, tangents, true);
+		 //mesh->CreateMeshSection(0, vertices3D, triangles3D, normals, uv0, vertexColors, tangents, true);
+
+		FActorSpawnParameters spawnParams = FActorSpawnParameters();
+		spawnParams.Template = this->GetOwner();
+		if (GetWorld()) {
+			UE_LOG(LogTemp, Warning, TEXT("Created duplicate"));
+
+			AStaticMeshActor* out = GetWorld()->SpawnActor<AStaticMeshActor>(FVector(0, 0, 0), FRotator(), spawnParams);
+			UWall_Cutter* outCut = out->FindComponentByClass<UWall_Cutter>();
+
+			outCut->start_wall_polygon = input;
+			outCut->wall_polygon_out.Empty();
+			outCut->cut_polygon_out.Empty();
+
+			UProceduralMeshComponent* outProc = out->FindComponentByClass<UProceduralMeshComponent>();
+			outProc->CreateMeshSection(0, vertices3D, triangles3D, normals, uv0, vertexColors, tangents, true);
+
+	
+			outCut->regions.Empty();
+			outCut->start_cut_polygon.Empty();
+
+		}
 	}
 	
+
+
 	return { vertices3D,triangles3D };
 }
 
