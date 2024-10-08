@@ -195,6 +195,11 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 			FVector2D checkingPos = other->data.pos;
 			if (checkingPos != currentNode->data.pos && checkingPos != currentNode->NextNode->data.pos && checkingPos != currentNode->PrevNode->data.pos) {
 				if (triangle.pointInsidePolygon(other->data.pos)) {
+					UE_LOG(LogTemp, Warning, TEXT("Point was inside triangle -------"));
+					triangle.printPolygon();
+					UE_LOG(LogTemp, Display, TEXT("Vector2D: X=%f, Y=%f"), other->data.pos.X, other->data.pos.Y);
+					UE_LOG(LogTemp, Warning, TEXT("-------"));
+
 					isValidTriangle = false;
 					break;
 				}
