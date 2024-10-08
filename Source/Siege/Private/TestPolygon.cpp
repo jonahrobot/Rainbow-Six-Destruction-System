@@ -243,9 +243,9 @@ bool TestInsidePolygon::RunTest(const FString& Parameters) {
 	Polygon p1 = Polygon("(1,1),(-1,1),(-1,-1),(1,-1)");
 
 	// Test Inside Caught
-	TestTrue("Polygon: InsidePolygon: TopCenter",p1.pointInsidePolygon(FVector2D(0,1)));
+	TestTrue("Polygon: InsidePolygon: TopCenter",p1.pointInsidePolygon(FVector2D(0,1))); // Fails
 	TestTrue("Polygon: InsidePolygon: BottomCenter", p1.pointInsidePolygon(FVector2D(0, -1)));
-	TestTrue("Polygon: InsidePolygon: MidLeft", p1.pointInsidePolygon(FVector2D(-1, 0)));
+	TestTrue("Polygon: InsidePolygon: MidLeft", p1.pointInsidePolygon(FVector2D(-1, 0))); // Fails
 	TestTrue("Polygon: InsidePolygon: MidRight", p1.pointInsidePolygon(FVector2D(1, 0)));
 	TestTrue("Polygon: InsidePolygon: Interior", p1.pointInsidePolygon(FVector2D(0.3, -0.5)));
 
@@ -254,6 +254,14 @@ bool TestInsidePolygon::RunTest(const FString& Parameters) {
 	TestFalse("Polygon: InsidePolygon: Off_BottomCenter", p1.pointInsidePolygon(FVector2D(0, -1.1)));
 	TestFalse("Polygon: InsidePolygon: Off_MidLeft", p1.pointInsidePolygon(FVector2D(-1.1, 0)));
 	TestFalse("Polygon: InsidePolygon: Off_MidRight", p1.pointInsidePolygon(FVector2D(1.1, 0)));
+
+	// Test corner clip 
+	UE_LOG(LogTemp, Warning, TEXT("Starting clip test"));
+
+
+	Polygon p2 = Polygon("(-250,250),(250,-200),(-250,46)");
+
+	TestFalse("Polygon: InsidePolygon: ClipTest", p2.pointInsidePolygon(FVector2D(-250, -250)));
 
 	return true;
 }
@@ -317,7 +325,7 @@ bool TestClockwiseCheck::RunTest(const FString& Parameters) {
 bool TestSwapDirection::RunTest(const FString& Parameters) {
 
 	Polygon Start = Polygon("(2,2),(2,0),(0,0),(0,2)");	
-	Polygon End = Polygon("(0,2),(0,0),(2,0),(2,2)");
+	Polygon End = Polygon("(2,2),(0,2),(0,0),(2,0)");
 
 	Start.flipPolygonVertexOrder();
 

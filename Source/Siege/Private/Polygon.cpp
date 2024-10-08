@@ -72,19 +72,34 @@ bool Polygon::pointInsidePolygon(FVector2D const& point){
 		float y2 = a_end.Y;
 
 		// Check if point is on line edge
-		FVector2D directionOfLine = a_end - a_start;
-		FVector2D pointProjectionToLine = a_start + ((FVector2D::DotProduct(point - a_start, directionOfLine) / (directionOfLine.SizeSquared()) * directionOfLine));
-		if (FVector2D::Distance(pointProjectionToLine,point) < 0.001) {
+		// For A -> B need to do b-a
+		// Project our point onto our edge
+		FVector2D a = point - a_start; // Start to point
+		FVector2D b = a_end - a_start; // Start to end
+
+		float x = FVector2D::DotProduct(a, b) / b.Length();
+
+		b.Normalize();
+
+		FVector2D projectedPoint = (b * x) + a_start;
+
+		double space = FVector2D::Distance(projectedPoint, point);
+
+		if (space < 0.001 && x > 0) {
 			return true;
 		}
 
-		// This is magic idk what is going on here
+		//// Is point Y between the two line ends?
 		if ((point.Y < y1) != (point.Y < y2)) {
-			if (point.X < (x1 + ((point.Y - y1) / (y2 - y1)) * (x2 - x1))) {
+
+			// Is point X to the left of the line
+			if (point.X <= (x1 + ((point.Y - y1) / (y2 - y1)) * (x2 - x1))) {
 				overlaps += 1;
 			}
 		}
 	}
+
+	//UE_LOG(LogTemp, Warning, TEXT("Overlaps: %d"), overlaps);
 
 	return overlaps % 2 == 1;
 }
@@ -136,6 +151,8 @@ bool Polygon::extrudePolygon(float length, TArray<FVector>& out_vertices, FJsonS
 
 bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializableArrayInt& out_triangles) {
 
+	//UE_LOG(LogTemp, Warning, TEXT("Triangulated Polygon"));
+
 	Polygon::Vertex* currentNode = HeadNode;
 
 	// Convert polygon vertices 
@@ -162,6 +179,10 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 		FVector2D center_to_left = currentNode->NextNode->data.pos - currentNode->data.pos;
 		FVector2D center_to_right = currentNode->PrevNode->data.pos - currentNode->data.pos;
 
+		if (triangle.isPolygonClockwise() == false) {
+			triangle.flipPolygonVertexOrder();
+		}
+
 		if (FVector2D::CrossProduct(center_to_left, center_to_right) > 0) {
 			currentNode = next;
 			continue;
@@ -174,6 +195,11 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 			FVector2D checkingPos = other->data.pos;
 			if (checkingPos != currentNode->data.pos && checkingPos != currentNode->NextNode->data.pos && checkingPos != currentNode->PrevNode->data.pos) {
 				if (triangle.pointInsidePolygon(other->data.pos)) {
+					UE_LOG(LogTemp, Warning, TEXT("Point was inside triangle -------"));
+					triangle.printPolygon();
+					UE_LOG(LogTemp, Display, TEXT("Vector2D: X=%f, Y=%f"), other->data.pos.X, other->data.pos.Y);
+					UE_LOG(LogTemp, Warning, TEXT("-------"));
+
 					isValidTriangle = false;
 					break;
 				}
@@ -182,6 +208,9 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 
 		// If triangle -> Convert to Int array structure
 		if (isValidTriangle) {
+
+			//UE_LOG(LogTemp, Warning, TEXT("Triangle added to render"));
+
 			// Remove current node from region
 			Remove(currentNode);
 
@@ -207,8 +236,6 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 
 	return failCase < 100;
 }
-
-
 
 int Polygon::Num() const{
 	return size;
@@ -321,11 +348,36 @@ void Polygon::Remove(Vertex* x) {
 
 bool Polygon::isPolygonClockwise() {
 
+	float area = 0.0f;
 
+	for (Vertex* other : *this) {
 
-	return true;
+		FVector2d a = other->data.pos;
+		FVector2d b = other->NextNode->data.pos;
+
+		float width = b.X - a.X;	
+		float height = (b.Y + a.Y) / 2.0f;
+
+		area += width * height;
+
+	};
+
+	return area >= 0;
 }
 
 void Polygon::flipPolygonVertexOrder() {
 
+	Vertex* start = HeadNode;
+	Vertex* appendAfter = TailNode;
+
+	for (Vertex* currentVertex : *this) {
+	
+		if (currentVertex->data == start->data) continue; // Skip start
+		if (currentVertex->data == appendAfter->data) return; // End at appendAfter node
+
+		VertexData caughtData = currentVertex->data;
+		Remove(currentVertex);
+
+		Insert(caughtData, appendAfter);
+	}
 }
