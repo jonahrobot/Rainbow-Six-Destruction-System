@@ -74,7 +74,11 @@ void UWall_Cutter::BeginPlay()
 #pragma region Helper Methods
 
 void UWall_Cutter::startInput() {
-	cutWall(true);
+	Draw_Polygon(start_wall_polygon, "Show wall", true, true);
+	Draw_Polygon(start_cut_polygon, "Show Cut", true, false);
+	FTimerHandle UniqueHandle;
+	FTimerDelegate DelayDelegate = FTimerDelegate::CreateUObject(this, &UWall_Cutter::HalfOfCut);
+	GetWorld()->GetTimerManager().SetTimer(UniqueHandle,DelayDelegate, 2.f, false);
 }
 
 void UWall_Cutter::addCutPoint(FVector2D const& PointToAdd) {
@@ -157,19 +161,73 @@ void UWall_Cutter::Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon) {
 	}
 }
 
-/*
- *	Cut polygon from wall
- *	Updates mesh Wall_Cutter component is attached too
- *	
- *	@cut_shape the polygon we want to cut from the wall
- *		- cut_shape vertices must be ordered clockwise
- */
-void UWall_Cutter::cutWall(bool shouldRenderRegion) {
 
+void UWall_Cutter::Draw_Polygon(Polygon poly, FString nameOfDraw, bool drawEdges, bool erasePast = true) {
+
+	// Clear past draws
+	if (erasePast) {
+		UKismetSystemLibrary::FlushPersistentDebugLines(GetWorld());
+		UKismetSystemLibrary::FlushDebugStrings(GetWorld());
+	}
+
+	// Log drawing
+	if (GEngine) {
+		GEngine->ClearOnScreenDebugMessages();
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Blue, nameOfDraw);
+	}
+
+	// Pre-Conditions
+	if (poly.IsEmpty()) {
+		return;
+	}
+
+	// Get last vertex pos, to create lines from
+	FVector lastGlobal = MathLib::LocalToGlobal(poly.TailNode->data.pos, actor_origin, actor_rotation, actor_scale.X);
+
+	int index = 0;
+	Polygon::Vertex* currentVertex = poly.HeadNode;
+	do {
+
+		FVector globalVertexPos = MathLib::LocalToGlobal(currentVertex->data.pos, actor_origin, actor_rotation, actor_scale.X);
+
+		// Draw Vertex
+		switch (currentVertex->data.type) {
+		case Polygon::NONE:
+			DrawDebugSphere(GetWorld(), globalVertexPos, 25, 5, FColor::Black, true, -1.0f);
+			break;
+		case Polygon::ENTRY:
+			DrawDebugSphere(GetWorld(), globalVertexPos, 25, 5, FColor::Green, true, -1.0f);
+			break;
+		case Polygon::EXIT:
+			DrawDebugSphere(GetWorld(), globalVertexPos, 25, 5, FColor::Red, true, -1.0f);
+			break;
+		}
+
+		// Draw edge
+		if (drawEdges) {
+			DrawDebugLine(GetWorld(), lastGlobal, globalVertexPos, FColor::Black, true, -1.0f, 0, 10.0f);
+		}
+
+		// Update vertex pos
+		lastGlobal = globalVertexPos;
+
+		// Draw vector type
+		FVector indexTextPos = this->actor_rotation.RotateVector(FVector(100, currentVertex->data.pos.X, currentVertex->data.pos.Y - 10));
+		FString indexText = FString::FromInt(index);
+		index++;
+
+		DrawDebugString(GetWorld(), indexTextPos, indexText, GetOwner(), FColor::Blue, -1.f, false, 2.0f);
+
+		currentVertex = currentVertex->NextNode;
+	} while (currentVertex != poly.HeadNode);
+}
+
+void UWall_Cutter::HalfOfCut() {
 	if (start_cut_polygon.Num() <= 2) return;
 
 	wall_polygon_out = start_wall_polygon;
 	cut_polygon_out = start_cut_polygon;
+
 
 	if (cut_polygon_out.isPolygonClockwise() == false) {
 		cut_polygon_out.flipPolygonVertexOrder();
@@ -179,7 +237,74 @@ void UWall_Cutter::cutWall(bool shouldRenderRegion) {
 		wall_polygon_out.flipPolygonVertexOrder();
 	}
 
-    Add_Intercepts(wall_polygon_out, cut_polygon_out);
+	Add_Intercepts(wall_polygon_out, cut_polygon_out);
+
+	Draw_Polygon(wall_polygon_out, "Show wall", true, true);
+	Draw_Polygon(cut_polygon_out, "Show Cut", true, false);
+
+	FTimerHandle UniqueHandle;
+	FTimerDelegate DelayDelegate = FTimerDelegate::CreateUObject(this, &UWall_Cutter::cutWall, true);
+	GetWorld()->GetTimerManager().SetTimer(UniqueHandle, DelayDelegate, 2.f, false);
+}
+
+/*
+ *	Cut polygon from wall
+ *	Updates mesh Wall_Cutter component is attached too
+ *	
+ *	@cut_shape the polygon we want to cut from the wall
+ *		- cut_shape vertices must be ordered clockwise
+ */
+void UWall_Cutter::AlmostThere(TArray<extrudable> t) {
+	for (extrudable x : t) {
+		extrudeAndShow(x);
+	}
+
+	this->GetOwner()->Destroy();
+}
+
+void UWall_Cutter::DisplayCut() {
+
+	TArray<extrudable> test;
+
+	for (Polygon toRender : regions) {
+
+		if (toRender.isPolygonClockwise() == false) {
+			toRender.flipPolygonVertexOrder();
+		}
+
+		extrudable next;
+
+		next.input = toRender;
+
+		toRender.triangulatePolygon(next.renderableVertices, next.triangles);
+
+		test.Add(next);
+	
+		// render traigulated data
+	}
+
+
+	for (extrudable x : test) {
+
+		FVector lastGlobal = MathLib::LocalToGlobal(x.renderableVertices[x.triangles[0]], actor_origin, actor_rotation, actor_scale.X);
+
+
+		for (int i = 0; i < x.triangles.Num(); i++) {
+
+			FVector current = MathLib::LocalToGlobal(x.renderableVertices[x.triangles[i]], actor_origin, actor_rotation, actor_scale.X);
+
+			DrawDebugLine(GetWorld(), lastGlobal, current, FColor::Black, true, -1.0f, 0, 10.0f);
+
+			lastGlobal = current;
+		}
+	}
+
+	FTimerHandle UniqueHandle;
+	FTimerDelegate DelayDelegate = FTimerDelegate::CreateUObject(this, &UWall_Cutter::AlmostThere, test);
+	GetWorld()->GetTimerManager().SetTimer(UniqueHandle, DelayDelegate, 2.f, false);
+}
+
+void UWall_Cutter::cutWall(bool shouldRenderRegion = true) {
 
 	regions.Empty();
 	TArray<Polygon::VertexData> visited;
@@ -195,18 +320,72 @@ void UWall_Cutter::cutWall(bool shouldRenderRegion) {
 		}
 	}
 
-	if (shouldRenderRegion == false) return;
+	UKismetSystemLibrary::FlushPersistentDebugLines(GetWorld());
+	UKismetSystemLibrary::FlushDebugStrings(GetWorld());
 
 	for (Polygon toRender : regions) {
-
-		if (toRender.isPolygonClockwise() == false) {
-			toRender.flipPolygonVertexOrder();
-		}
-
-		renderPolygon(toRender, false);
+		Draw_Polygon(toRender, "Show Cut", true, false);
 	}
 
-	this->GetOwner()->Destroy();
+	if (shouldRenderRegion == false) return;
+
+
+	FTimerHandle UniqueHandle;
+	FTimerDelegate DelayDelegate = FTimerDelegate::CreateUObject(this, &UWall_Cutter::DisplayCut);
+	GetWorld()->GetTimerManager().SetTimer(UniqueHandle, DelayDelegate, 2.f, false);
+}
+
+void UWall_Cutter::extrudeAndShow(extrudable input) {
+	
+	Polygon regionToRender = input.input;
+
+	TArray<FVector2D> renderableVertices = input.renderableVertices;
+	FJsonSerializableArrayInt trianglesStart = input.triangles;
+	TArray<FVector> vertices3D;
+	FJsonSerializableArrayInt triangles3D = trianglesStart;
+
+	regionToRender.extrudePolygon(actor_scale.X, vertices3D, triangles3D, renderableVertices, trianglesStart);
+
+	TArray<FVector> normals;
+	TArray<FVector2d> uv0;
+	TArray<FColor> vertexColors;
+	TArray<FProcMeshTangent> tangents;
+
+	/**
+		*	Create/replace a section for this procedural mesh component.
+		*	This function is deprecated for Blueprints because it uses the unsupported 'Color' type. Use new 'Create Mesh Section' function which uses LinearColor instead.
+		*	@param	SectionIndex		Index of the section to create or replace.
+		*	@param	Vertices			Vertex buffer of all vertex positions to use for this mesh section.
+		*	@param	Triangles			Index buffer indicating which vertices make up each triangle. Length must be a multiple of 3.
+		*	@param	Normals				Optional array of normal vectors for each vertex. If supplied, must be same length as Vertices array.
+		*	@param	UV0					Optional array of texture co-ordinates for each vertex. If supplied, must be same length as Vertices array.
+		*	@param	VertexColors		Optional array of colors for each vertex. If supplied, must be same length as Vertices array.
+		*	@param	Tangents			Optional array of tangent vector for each vertex. If supplied, must be same length as Vertices array.
+		*	@param	bCreateCollision	Indicates whether collision should be created for this section. This adds significant cost.
+		*/
+
+		//mesh->CreateMeshSection(0, vertices3D, triangles3D, normals, uv0, vertexColors, tangents, true);
+
+	FActorSpawnParameters spawnParams = FActorSpawnParameters();
+	spawnParams.Template = this->GetOwner();
+	if (GetWorld()) {
+		UE_LOG(LogTemp, Warning, TEXT("Created duplicate"));
+
+		AStaticMeshActor* out = GetWorld()->SpawnActor<AStaticMeshActor>(FVector(0, 0, 0), FRotator(), spawnParams);
+		UWall_Cutter* outCut = out->FindComponentByClass<UWall_Cutter>();
+
+		outCut->start_wall_polygon = input.input;
+		outCut->wall_polygon_out.Empty();
+		outCut->cut_polygon_out.Empty();
+
+		UProceduralMeshComponent* outProc = out->FindComponentByClass<UProceduralMeshComponent>();
+		outProc->CreateMeshSection(0, vertices3D, triangles3D, normals, uv0, vertexColors, tangents, true);
+
+
+		outCut->regions.Empty();
+		outCut->start_cut_polygon.Empty();
+
+	}
 }
 
 UWall_Cutter::renderOut UWall_Cutter::renderPolygon(Polygon regionToRender, bool testing) {

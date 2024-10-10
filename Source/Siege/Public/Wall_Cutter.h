@@ -29,6 +29,13 @@ public:
 		FJsonSerializableArrayInt triangles;
 	};
 
+	struct extrudable {
+		TArray<FVector2D> renderableVertices;
+		FJsonSerializableArrayInt triangles;
+		Polygon input;
+	};
+
+
 	void cutWall(bool shouldRenderRegion);
 	void Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon);
 
@@ -40,6 +47,12 @@ public:
 	UWall_Cutter::renderOut renderPolygon(Polygon regionToRender, bool testing);
 
 private:
+	void Draw_Polygon(Polygon poly, FString nameOfDraw, bool drawEdges, bool erasePast);
+
+	void HalfOfCut();
+	void DisplayCut();
+	void AlmostThere(TArray<extrudable> t);
+	void extrudeAndShow(extrudable input);
 	Polygon wall_polygon_out;
 	Polygon cut_polygon_out;
 	TArray<Polygon> regions;
