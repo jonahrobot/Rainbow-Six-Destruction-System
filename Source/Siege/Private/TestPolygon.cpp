@@ -255,13 +255,14 @@ bool TestInsidePolygon::RunTest(const FString& Parameters) {
 	TestFalse("Polygon: InsidePolygon: Off_MidLeft", p1.pointInsidePolygon(FVector2D(-1.1, 0)));
 	TestFalse("Polygon: InsidePolygon: Off_MidRight", p1.pointInsidePolygon(FVector2D(1.1, 0)));
 
-	// Test corner clip 
-	UE_LOG(LogTemp, Warning, TEXT("Starting clip test"));
-
 
 	Polygon p2 = Polygon("(-250,250),(250,-200),(-250,46)");
 
 	TestFalse("Polygon: InsidePolygon: ClipTest", p2.pointInsidePolygon(FVector2D(-250, -250)));
+
+
+	Polygon p3 = Polygon("(0,-250,ENTRY),(-250,-250),(0,0)");
+	TestFalse("Polygon: InsidePolygon: IDK", p2.pointInsidePolygon(FVector2D(250, 250)));
 
 	return true;
 }

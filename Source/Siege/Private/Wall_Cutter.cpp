@@ -33,21 +33,43 @@ void UWall_Cutter::BeginPlay()
 	actor_origin = GetOwner()->GetActorLocation();
 	actor_rotation = GetOwner()->GetActorRotation();
 
+	UE_LOG(LogTemp, Warning, TEXT("Scale = %f , %f, %f"),actor_scale.X, actor_scale.Y, actor_scale.Z);
+	UE_LOG(LogTemp, Warning, TEXT("Origin = %f , %f, %f"), actor_origin.X, actor_origin.Y, actor_origin.Z);
+	UE_LOG(LogTemp, Warning, TEXT("Rotation = %s"),*actor_rotation.ToString());
+
+
 	mesh = GetOwner()->FindComponentByClass<UProceduralMeshComponent>();
 
 	// Else
 	wall_polygon_out.Empty();
 	cut_polygon_out.Empty();
 
+	UE_LOG(LogTemp,Warning,TEXT("%f by %f"), actor_scale.Y,actor_scale.Z)
+
 	start_wall_polygon.Add({ FVector2D(actor_scale.Y, actor_scale.Z), Polygon::NONE });
 	start_wall_polygon.Add({ FVector2D(-actor_scale.Y, actor_scale.Z),Polygon::NONE });
 	start_wall_polygon.Add({ FVector2D(-actor_scale.Y, -actor_scale.Z),Polygon::NONE });
 	start_wall_polygon.Add({ FVector2D(actor_scale.Y, -actor_scale.Z),Polygon::NONE });
 
+
+	//start_cut_polygon.Add({ FVector2D(0, actor_scale.Z+100), Polygon::NONE });
+
+	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 100,0), Polygon::NONE });
+	//start_cut_polygon.Add({ FVector2D(-actor_scale.Y - 100,0), Polygon::NONE });
+
 	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, -actor_scale.Z - 20), Polygon::NONE });
 	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 20, 0), Polygon::NONE });
 	//start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
 	//start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 20), Polygon::NONE });
+
+
+	start_cut_polygon.Add({ FVector2D(actor_scale.Y + 100, -actor_scale.Z - 100), Polygon::NONE });
+	start_cut_polygon.Add({ FVector2D(actor_scale.Y + 100, 0), Polygon::NONE });
+	start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
+	start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 100), Polygon::NONE });
+
+	//start_cut_polygon = Polygon("(10.5,62.5),(130,100),(150,0),(270,100),(280,62.5),(160,-62.5),(170,-100),(310,-135),(295,-220),(160,-135),(135,-140),(90,-270),(32.5,-260),(62.5,-135),(58,-95),(-62.5,-90),(-62.5,-50),(58,-40)");
+
 	TArray<FVector2D> renderableVertices;
 	FJsonSerializableArrayInt trianglesStart;
 
@@ -74,6 +96,8 @@ void UWall_Cutter::BeginPlay()
 #pragma region Helper Methods
 
 void UWall_Cutter::startInput() {
+	start_cut_polygon.printPolygon();
+
 	Draw_Polygon(start_wall_polygon, "Show wall", true, true);
 	Draw_Polygon(start_cut_polygon, "Show Cut", true, false);
 	FTimerHandle UniqueHandle;
@@ -283,8 +307,9 @@ void UWall_Cutter::DisplayCut() {
 		// render traigulated data
 	}
 
-
 	for (extrudable x : test) {
+
+		if (x.triangles.Num() == 0) continue;
 
 		FVector lastGlobal = MathLib::LocalToGlobal(x.renderableVertices[x.triangles[0]], actor_origin, actor_rotation, actor_scale.X);
 

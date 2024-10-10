@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
+#include "MathLib.h"
 #include "Polygon.h"
 
 Polygon::~Polygon()
@@ -151,6 +151,8 @@ bool Polygon::extrudePolygon(float length, TArray<FVector>& out_vertices, FJsonS
 
 bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializableArrayInt& out_triangles) {
 
+	Polygon oldRef = *this;
+
 	//UE_LOG(LogTemp, Warning, TEXT("Triangulated Polygon"));
 
 	Polygon::Vertex* currentNode = HeadNode;
@@ -171,9 +173,31 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 
 		Polygon triangle;
 
+		//FVector test_scale = FVector(100, 250, 250);
+		//FVector test_origin = FVector(-1360, 1210, 300);
+		//FRotator test_rotation = FRotator(0, 0, 0);
+
+		//FVector a = MathLib::LocalToGlobal(currentNode->data.pos, test_origin, test_rotation, test_scale.X);
+		//FVector b = MathLib::LocalToGlobal(currentNode->NextNode->data.pos, test_origin, test_rotation, test_scale.X);
+		//FVector c = MathLib::LocalToGlobal(currentNode->PrevNode->data.pos, test_origin, test_rotation, test_scale.X);
+
+		//DrawDebugLine(GWorld, a, b, FColor::Orange, true, -1.0f, 0, 10.0f);
+		//DrawDebugLine(GWorld, b, c, FColor::Orange, true, -1.0f, 0, 10.0f);
+		//DrawDebugLine(GWorld, c, a, FColor::Orange, true, -1.0f, 0, 10.0f);
+
 		triangle.Add(currentNode->data);
 		triangle.Add(currentNode->NextNode->data);
 		triangle.Add(currentNode->PrevNode->data);
+
+		FVector2D start = currentNode->NextNode->data.pos;
+		FVector2D end = currentNode->PrevNode->data.pos;
+
+		FVector2D midPoint = ((start.X + end.X) / 2, (start.Y + end.Y) / 2);
+		
+		if (oldRef.pointInsidePolygon(midPoint) == false) {
+			currentNode = next;
+			continue;
+		}
 
 		// Check if Current Node is in or out of region
 		FVector2D center_to_left = currentNode->NextNode->data.pos - currentNode->data.pos;
@@ -183,21 +207,21 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 			triangle.flipPolygonVertexOrder();
 		}
 
-		if (FVector2D::CrossProduct(center_to_left, center_to_right) > 0) {
+		/*if (FVector2D::CrossProduct(center_to_left, center_to_right) > 0) {
 			currentNode = next;
 			continue;
-		}
+		}*/
 
 		bool isValidTriangle = true;
 
 		// Check if any point is inside the triangle
 		for (Polygon::Vertex* other : *this) {
 			FVector2D checkingPos = other->data.pos;
-			if (checkingPos != currentNode->data.pos && checkingPos != currentNode->NextNode->data.pos && checkingPos != currentNode->PrevNode->data.pos) {
+			if (checkingPos != currentNode->data.pos && checkingPos != currentNode->NextNode->data.pos && checkingPos != currentNode->PrevNode->data.pos) { // failing because close data
 				if (triangle.pointInsidePolygon(other->data.pos)) {
 					UE_LOG(LogTemp, Warning, TEXT("Point was inside triangle -------"));
-					triangle.printPolygon();
-					UE_LOG(LogTemp, Display, TEXT("Vector2D: X=%f, Y=%f"), other->data.pos.X, other->data.pos.Y);
+					triangle.printPolygon("Triangle in question");
+					UE_LOG(LogTemp, Warning, TEXT("Point found inside: X=%f, Y=%f"), checkingPos.X, checkingPos.Y);
 					UE_LOG(LogTemp, Warning, TEXT("-------"));
 
 					isValidTriangle = false;
