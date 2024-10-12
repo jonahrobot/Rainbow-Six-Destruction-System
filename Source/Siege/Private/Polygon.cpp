@@ -165,6 +165,8 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 	// Create tris
 	int failCase = 0;
 
+	bool is_polygon_clockwise = isPolygonClockwise();
+
 	while (Num() >= 3 && failCase < 100) {
 
 		failCase++;
@@ -173,44 +175,27 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 
 		Polygon triangle;
 
-		//FVector test_scale = FVector(100, 250, 250);
-		//FVector test_origin = FVector(-1360, 1210, 300);
-		//FRotator test_rotation = FRotator(0, 0, 0);
-
-		//FVector a = MathLib::LocalToGlobal(currentNode->data.pos, test_origin, test_rotation, test_scale.X);
-		//FVector b = MathLib::LocalToGlobal(currentNode->NextNode->data.pos, test_origin, test_rotation, test_scale.X);
-		//FVector c = MathLib::LocalToGlobal(currentNode->PrevNode->data.pos, test_origin, test_rotation, test_scale.X);
-
-		//DrawDebugLine(GWorld, a, b, FColor::Orange, true, -1.0f, 0, 10.0f);
-		//DrawDebugLine(GWorld, b, c, FColor::Orange, true, -1.0f, 0, 10.0f);
-		//DrawDebugLine(GWorld, c, a, FColor::Orange, true, -1.0f, 0, 10.0f);
-
 		triangle.Add(currentNode->data);
 		triangle.Add(currentNode->NextNode->data);
 		triangle.Add(currentNode->PrevNode->data);
 
-		FVector2D start = currentNode->NextNode->data.pos;
-		FVector2D end = currentNode->PrevNode->data.pos;
+		// Get angle at current point
+		FVector2D BA = currentNode->NextNode->data.pos - currentNode->data.pos;
+		FVector2D BC = currentNode->PrevNode->data.pos - currentNode->data.pos;
 
-		FVector2D midPoint = ((start.X + end.X) / 2, (start.Y + end.Y) / 2);
-		
-		if (oldRef.pointInsidePolygon(midPoint) == false) {
-			currentNode = next;
-			continue;
+		double inner = FVector2D::DotProduct(BA, BC);
+		double BA_Length = BA.Length();
+		double BC_Length = BC.Length();
+
+		double angleOfTri = FMath::Acos(inner / (BA_Length * BC_Length));
+
+		bool is_tri_clockwise = triangle.isPolygonClockwise();
+
+		if (is_tri_clockwise != is_polygon_clockwise) {
+			angleOfTri = 2 * PI - angleOfTri;
 		}
 
-		// Check if Current Node is in or out of region
-		FVector2D center_to_left = currentNode->NextNode->data.pos - currentNode->data.pos;
-		FVector2D center_to_right = currentNode->PrevNode->data.pos - currentNode->data.pos;
-
-		if (triangle.isPolygonClockwise() == false) {
-			triangle.flipPolygonVertexOrder();
-		}
-
-		/*if (FVector2D::CrossProduct(center_to_left, center_to_right) > 0) {
-			currentNode = next;
-			continue;
-		}*/
+		if (angleOfTri >= 180) continue;
 
 		bool isValidTriangle = true;
 
@@ -232,6 +217,11 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 
 		// If triangle -> Convert to Int array structure
 		if (isValidTriangle) {
+
+
+			if (triangle.isPolygonClockwise() == false) {
+				triangle.flipPolygonVertexOrder();
+			}
 
 			//UE_LOG(LogTemp, Warning, TEXT("Triangle added to render"));
 

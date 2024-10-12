@@ -307,21 +307,49 @@ void UWall_Cutter::DisplayCut() {
 		// render traigulated data
 	}
 
+	int counter = 0;
+
+	FColor triColor = FColor::MakeRandomColor();
+
 	for (extrudable x : test) {
+
+		TArray<FVector> renderableTri;
+
+		for (FVector2D testVec : x.renderableVertices) {
+			renderableTri.Add(MathLib::LocalToGlobal(testVec, actor_origin, actor_rotation, actor_scale.X));
+		}
 
 		if (x.triangles.Num() == 0) continue;
 
-		FVector lastGlobal = MathLib::LocalToGlobal(x.renderableVertices[x.triangles[0]], actor_origin, actor_rotation, actor_scale.X);
+		//FVector lastGlobal = MathLib::LocalToGlobal(x.renderableVertices[x.triangles[0]], actor_origin, actor_rotation, actor_scale.X);
 
 
-		for (int i = 0; i < x.triangles.Num(); i++) {
+		// render from renderableTri and 
+		for (int i = 0; i < x.triangles.Num(); i += 6) {
 
+			// Create Indicies for tri
+			TArray<int> ourMesh;
+
+			ourMesh.Add(x.triangles[i]);
+			ourMesh.Add(x.triangles[i+1]);
+			ourMesh.Add(x.triangles[i + 2]);
+			ourMesh.Add(x.triangles[i + 3]);
+			ourMesh.Add(x.triangles[i + 4]);
+			ourMesh.Add(x.triangles[i + 5]);
+
+			DrawDebugMesh(GetWorld(), renderableTri,ourMesh,triColor, true, -1.0f, 0);
+			triColor = FColor::MakeRandomColor();
+		}
+
+	/*	for (int i = 0; i < x.triangles.Num(); i++) {
+
+	
 			FVector current = MathLib::LocalToGlobal(x.renderableVertices[x.triangles[i]], actor_origin, actor_rotation, actor_scale.X);
 
-			DrawDebugLine(GetWorld(), lastGlobal, current, FColor::Black, true, -1.0f, 0, 10.0f);
+			DrawDebugLine(GetWorld(), lastGlobal, current, triColor, true, -1.0f, 0, 10.0f);
 
 			lastGlobal = current;
-		}
+		}*/
 	}
 
 	FTimerHandle UniqueHandle;
