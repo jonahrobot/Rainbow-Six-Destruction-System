@@ -29,6 +29,7 @@ void UWall_Cutter::BeginPlay()
 
 	}
 
+
 	actor_scale = GetOwner()->GetActorScale() / 2 * 100;
 	actor_origin = GetOwner()->GetActorLocation();
 	actor_rotation = GetOwner()->GetActorRotation();
@@ -63,12 +64,12 @@ void UWall_Cutter::BeginPlay()
 	//start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 20), Polygon::NONE });
 
 
-	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 100, -actor_scale.Z - 100), Polygon::NONE });
-	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 100, 0), Polygon::NONE });
-	//start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
-	//start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 100), Polygon::NONE });
+	start_cut_polygon.Add({ FVector2D(actor_scale.Y + 100, -actor_scale.Z + 400), Polygon::NONE });
+	start_cut_polygon.Add({ FVector2D(actor_scale.Y + 100, 0), Polygon::NONE });
+	start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
+	start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z + 400), Polygon::NONE });
 
-	start_cut_polygon = Polygon("(10.5,62.5),(130,100),(150,0),(270,100),(280,62.5),(160,-62.5),(170,-100),(310,-135),(295,-220),(160,-135),(135,-140),(90,-270),(32.5,-260),(62.5,-135),(58,-95),(-62.5,-90),(-62.5,-50),(58,-40)");
+	//start_cut_polygon = Polygon("(10.5,62.5),(130,100),(150,0),(270,100),(280,62.5),(160,-62.5),(170,-100),(310,-135),(295,-220),(160,-135),(135,-140),(90,-270),(32.5,-260),(62.5,-135),(58,-95),(-62.5,-90),(-62.5,-50),(58,-40)");
 
 	TArray<FVector2D> renderableVertices;
 	FJsonSerializableArrayInt trianglesStart;
@@ -96,6 +97,8 @@ void UWall_Cutter::BeginPlay()
 #pragma region Helper Methods
 
 void UWall_Cutter::startInput() {
+	if (start_cut_polygon.Num() <= 2) return;
+
 	start_cut_polygon.printPolygon();
 
 	Draw_Polygon(start_wall_polygon, "Show wall", true, true);
@@ -286,6 +289,9 @@ void UWall_Cutter::AlmostThere(TArray<extrudable> t) {
 	this->GetOwner()->Destroy();
 }
 
+TArray<FColor> possibleColors = { FColor::Red, FColor::Blue, FColor::White, FColor::Green, FColor::Black, FColor::Yellow };
+int indexOfColors = 0;
+
 void UWall_Cutter::DisplayCut() {
 
 	TArray<extrudable> test;
@@ -313,6 +319,8 @@ void UWall_Cutter::DisplayCut() {
 
 	for (extrudable x : test) {
 
+		indexOfColors = 0;
+
 		TArray<FVector> renderableTri;
 
 		for (FVector2D testVec : x.renderableVertices) {
@@ -325,22 +333,27 @@ void UWall_Cutter::DisplayCut() {
 
 
 		// render from renderableTri and 
-		for (int i = 0; i < x.triangles.Num(); i += 6) {
+		for (int i = 0; i < x.triangles.Num(); i += 3) {
 
-			if (i + 5 > x.triangles.Num() - 1) { break; }
+			if (i + 2 > x.triangles.Num() - 1) { break; }
 
 			// Create Indicies for tri
 			TArray<int> ourMesh;
-
+			
+			// LMAO why 6
 			ourMesh.Add(x.triangles[i]);
 			ourMesh.Add(x.triangles[i+1]);
 			ourMesh.Add(x.triangles[i + 2]);
-			ourMesh.Add(x.triangles[i + 3]);
-			ourMesh.Add(x.triangles[i + 4]);
-			ourMesh.Add(x.triangles[i + 5]);
+			//ourMesh.Add(x.triangles[i + 3]);
+			//ourMesh.Add(x.triangles[i + 4]);
+			//ourMesh.Add(x.triangles[i + 5]);
 
 			DrawDebugMesh(GetWorld(), renderableTri,ourMesh,triColor, true, -1.0f, 0);
-			triColor = FColor::MakeRandomColor();
+			indexOfColors += 1;
+			if (indexOfColors >= 5) {
+				indexOfColors = 0;
+			}
+			triColor = possibleColors[indexOfColors];
 		}
 
 	/*	for (int i = 0; i < x.triangles.Num(); i++) {
@@ -360,6 +373,10 @@ void UWall_Cutter::DisplayCut() {
 }
 
 void UWall_Cutter::cutWall(bool shouldRenderRegion = true) {
+
+	if (start_cut_polygon.Num() == 0) {
+		return;
+	}
 
 	regions.Empty();
 	TArray<Polygon::VertexData> visited;

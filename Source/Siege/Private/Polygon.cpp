@@ -79,13 +79,15 @@ bool Polygon::pointInsidePolygon(FVector2D const& point){
 
 		float x = FVector2D::DotProduct(a, b) / b.Length();
 
+		float beforeNorm = b.Length();
+
 		b.Normalize();
 
 		FVector2D projectedPoint = (b * x) + a_start;
 
 		double space = FVector2D::Distance(projectedPoint, point);
 
-		if (space < 0.001 && x > 0) {
+		if (space < 0.001 && x <= beforeNorm && x > 0) {
 			return true;
 		}
 
@@ -203,7 +205,7 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 		for (Polygon::Vertex* other : *this) {
 			FVector2D checkingPos = other->data.pos;
 			if (checkingPos != currentNode->data.pos && checkingPos != currentNode->NextNode->data.pos && checkingPos != currentNode->PrevNode->data.pos) { // failing because close data
-				if (triangle.pointInsidePolygon(other->data.pos)) {
+				if (triangle.pointInsidePolygon(checkingPos)) {
 					UE_LOG(LogTemp, Warning, TEXT("Point was inside triangle -------"));
 					triangle.printPolygon("Triangle in question");
 					UE_LOG(LogTemp, Warning, TEXT("Point found inside: X=%f, Y=%f"), checkingPos.X, checkingPos.Y);
