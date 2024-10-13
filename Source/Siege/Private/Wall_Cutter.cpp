@@ -187,7 +187,8 @@ void UWall_Cutter::Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon) {
 		}
 	}
 }
-
+TArray<FColor> possibleColors = { FColor::Red, FColor::Blue, FColor::White, FColor::Green, FColor::Black, FColor::Yellow };
+int indexOfColors = 0;
 
 void UWall_Cutter::Draw_Polygon(Polygon poly, FString nameOfDraw, bool drawEdges, bool erasePast = true) {
 
@@ -209,13 +210,13 @@ void UWall_Cutter::Draw_Polygon(Polygon poly, FString nameOfDraw, bool drawEdges
 	}
 
 	// Get last vertex pos, to create lines from
-	FVector lastGlobal = MathLib::LocalToGlobal(poly.TailNode->data.pos, actor_origin, actor_rotation, actor_scale.X);
+	FVector lastGlobal = MathLib::LocalToGlobal(poly.TailNode->data.pos, actor_origin, actor_rotation, actor_scale.X + 0.2);
 
 	int index = 0;
 	Polygon::Vertex* currentVertex = poly.HeadNode;
 	do {
 
-		FVector globalVertexPos = MathLib::LocalToGlobal(currentVertex->data.pos, actor_origin, actor_rotation, actor_scale.X);
+		FVector globalVertexPos = MathLib::LocalToGlobal(currentVertex->data.pos, actor_origin, actor_rotation, actor_scale.X + 0.2);
 
 		// Draw Vertex
 		switch (currentVertex->data.type) {
@@ -243,7 +244,7 @@ void UWall_Cutter::Draw_Polygon(Polygon poly, FString nameOfDraw, bool drawEdges
 		FString indexText = FString::FromInt(index);
 		index++;
 
-		DrawDebugString(GetWorld(), indexTextPos, indexText, GetOwner(), FColor::Blue, -1.f, false, 2.0f);
+		//DrawDebugString(GetWorld(), indexTextPos, indexText, GetOwner(), possibleColors[inde], -1.f, false, 2.0f);
 
 		currentVertex = currentVertex->NextNode;
 	} while (currentVertex != poly.HeadNode);
@@ -285,12 +286,8 @@ void UWall_Cutter::AlmostThere(TArray<extrudable> t) {
 	for (extrudable x : t) {
 		extrudeAndShow(x);
 	}
-
 	this->GetOwner()->Destroy();
 }
-
-TArray<FColor> possibleColors = { FColor::Red, FColor::Blue, FColor::White, FColor::Green, FColor::Black, FColor::Yellow };
-int indexOfColors = 0;
 
 void UWall_Cutter::DisplayCut() {
 
@@ -324,7 +321,7 @@ void UWall_Cutter::DisplayCut() {
 		TArray<FVector> renderableTri;
 
 		for (FVector2D testVec : x.renderableVertices) {
-			renderableTri.Add(MathLib::LocalToGlobal(testVec, actor_origin, actor_rotation, actor_scale.X));
+			renderableTri.Add(MathLib::LocalToGlobal(testVec, actor_origin, actor_rotation, actor_scale.X + 0.1));
 		}
 
 		if (x.triangles.Num() == 0) continue;
@@ -356,15 +353,6 @@ void UWall_Cutter::DisplayCut() {
 			triColor = possibleColors[indexOfColors];
 		}
 
-	/*	for (int i = 0; i < x.triangles.Num(); i++) {
-
-	
-			FVector current = MathLib::LocalToGlobal(x.renderableVertices[x.triangles[i]], actor_origin, actor_rotation, actor_scale.X);
-
-			DrawDebugLine(GetWorld(), lastGlobal, current, triColor, true, -1.0f, 0, 10.0f);
-
-			lastGlobal = current;
-		}*/
 	}
 
 	FTimerHandle UniqueHandle;
