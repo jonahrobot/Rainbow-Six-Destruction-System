@@ -63,12 +63,12 @@ void UWall_Cutter::BeginPlay()
 	//start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 20), Polygon::NONE });
 
 
-	start_cut_polygon.Add({ FVector2D(actor_scale.Y + 100, -actor_scale.Z - 100), Polygon::NONE });
-	start_cut_polygon.Add({ FVector2D(actor_scale.Y + 100, 0), Polygon::NONE });
-	start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
-	start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 100), Polygon::NONE });
+	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 100, -actor_scale.Z - 100), Polygon::NONE });
+	//start_cut_polygon.Add({ FVector2D(actor_scale.Y + 100, 0), Polygon::NONE });
+	//start_cut_polygon.Add({ FVector2D(0, 0), Polygon::NONE });
+	//start_cut_polygon.Add({ FVector2D(0, -actor_scale.Z - 100), Polygon::NONE });
 
-	//start_cut_polygon = Polygon("(10.5,62.5),(130,100),(150,0),(270,100),(280,62.5),(160,-62.5),(170,-100),(310,-135),(295,-220),(160,-135),(135,-140),(90,-270),(32.5,-260),(62.5,-135),(58,-95),(-62.5,-90),(-62.5,-50),(58,-40)");
+	start_cut_polygon = Polygon("(10.5,62.5),(130,100),(150,0),(270,100),(280,62.5),(160,-62.5),(170,-100),(310,-135),(295,-220),(160,-135),(135,-140),(90,-270),(32.5,-260),(62.5,-135),(58,-95),(-62.5,-90),(-62.5,-50),(58,-40)");
 
 	TArray<FVector2D> renderableVertices;
 	FJsonSerializableArrayInt trianglesStart;
@@ -326,6 +326,8 @@ void UWall_Cutter::DisplayCut() {
 
 		// render from renderableTri and 
 		for (int i = 0; i < x.triangles.Num(); i += 6) {
+
+			if (i + 5 > x.triangles.Num() - 1) { break; }
 
 			// Create Indicies for tri
 			TArray<int> ourMesh;
