@@ -260,13 +260,18 @@ bool TestInsidePolygon::RunTest(const FString& Parameters) {
 
 	TestFalse("Polygon: InsidePolygon: ClipTest", p2.pointInsidePolygon(FVector2D(-250, -250)));
 
-	UE_LOG(LogTemp, Warning, TEXT("Starting faulty ones"));
 	Polygon p3 = Polygon("(0,-250,ENTRY),(-250,-250),(0,0)");
 	TestFalse("Polygon: InsidePolygon: Case two", p3.pointInsidePolygon(FVector2D(250, 250)));
 
 
 	Polygon p4 = Polygon("(250,0,ENTRY),(250,-250),(0,0)");
 	TestFalse("Polygon: InsidePolygon: Case three", p4.pointInsidePolygon(FVector2D(-250, 250)));
+
+
+
+	UE_LOG(LogTemp, Warning, TEXT("Starting faulty ones"));
+	Polygon p5 = Polygon("(-62.5,-50),(58,-95),(62.5,-135)");
+	TestFalse("Polygon: InsidePolygon: Case four", p5.pointInsidePolygon(FVector2D(130, 100)));
 
 	return true;
 }

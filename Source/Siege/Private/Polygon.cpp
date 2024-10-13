@@ -155,7 +155,9 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 
 	Polygon oldRef = *this;
 
-	//UE_LOG(LogTemp, Warning, TEXT("Triangulated Polygon"));
+	UE_LOG(LogTemp, Warning, TEXT("Triangulated Polygon of size %f"), Num());
+
+	printPolygon();
 
 	Polygon::Vertex* currentNode = HeadNode;
 
@@ -197,7 +199,7 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 			angleOfTri = 2 * PI - angleOfTri;
 		}
 
-		if (angleOfTri >= 180) continue;
+		if (angleOfTri >= PI) { currentNode = next; continue; }
 
 		bool isValidTriangle = true;
 
