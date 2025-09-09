@@ -105,13 +105,13 @@ void UWall_Cutter_Test::Draw_Polygon(Polygon poly, FString nameOfDraw, bool draw
 	}
 
 	// Get last vertex pos, to create lines from
-	FVector lastGlobal = MathLib::LocalToGlobal(poly.TailNode->data.pos, origin, rotation, scale.X);
+	FVector lastGlobal = MathLib::LocalToGlobal(poly.TailNode->data.pos, cutter->GetOwner(), scale.X);
 
 	int index = 0;
 	Polygon::Vertex* currentVertex = poly.HeadNode;
 	do{
 	
-		FVector globalVertexPos = MathLib::LocalToGlobal(currentVertex->data.pos, origin, rotation, scale.X);
+		FVector globalVertexPos = MathLib::LocalToGlobal(currentVertex->data.pos, cutter->GetOwner(), scale.X);
 
 		// Draw Vertex
 		switch(currentVertex->data.type){
@@ -194,10 +194,10 @@ void UWall_Cutter_Test::Step_Through_Draw() {
 	Polygon::InterceptTypes intercept_type = cutter->getInterceptType(out, b_end);
 
 	// Draw A line
-	FVector g_a_start = MathLib::LocalToGlobal(a_start, origin, rotation, scale.X);
-	FVector g_a_end = MathLib::LocalToGlobal(a_end, origin, rotation, scale.X);
-	FVector g_b_start = MathLib::LocalToGlobal(b_start, origin, rotation, scale.X);
-	FVector g_b_end = MathLib::LocalToGlobal(b_end, origin, rotation, scale.X);
+	FVector g_a_start = MathLib::LocalToGlobal(a_start, cutter->GetOwner(), scale.X);
+	FVector g_a_end = MathLib::LocalToGlobal(a_end, cutter->GetOwner(), scale.X);
+	FVector g_b_start = MathLib::LocalToGlobal(b_start, cutter->GetOwner(), scale.X);
+	FVector g_b_end = MathLib::LocalToGlobal(b_end, cutter->GetOwner(), scale.X);
 	DrawDebugLine(GetWorld(), g_a_start, g_a_end, FColor::Red, true, -1.0f, 0, 10.0f);
 	DrawDebugLine(GetWorld(), g_b_start, g_b_end, FColor::Green, true, -1.0f, 0, 10.0f);
 

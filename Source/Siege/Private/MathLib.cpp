@@ -58,16 +58,41 @@ bool MathLib::Find_Intersection(FVector2D& out, EDGE edge_a, EDGE edge_b) {
 	return true;
 }
 
-FVector MathLib::LocalToGlobal(FVector2D const& LocalVector, FVector const& ActorOrigin, FRotator const& ActorRotation, float x) {
+FVector MathLib::LocalToGlobal(FVector2D local_position, AActor* reference_actor, float depth) {
 
-	FVector newVector = FVector(x, LocalVector.X, LocalVector.Y);
-	return ActorRotation.RotateVector(newVector) + ActorOrigin;
+	FVector basisX = reference_actor->GetActorForwardVector();
+	FVector basisY = reference_actor->GetActorRightVector();
+	FVector basisZ = reference_actor->GetActorUpVector();
+	FVector rootPos = reference_actor->GetActorLocation();
+
+	FMatrix LocalToGlobal = FMatrix(
+		FPlane(basisX.X, basisX.Y, basisX.Z, 0.0f),
+		FPlane(basisY.X, basisY.Y, basisY.Z, 0.0f),
+		FPlane(basisZ.X, basisZ.Y, basisZ.Z, 0.0f),
+		FPlane(rootPos.X, rootPos.Y, rootPos.Z, 1.0f)
+	);
+
+	FVector localPositionWithDepth = FVector(depth, local_position.X, local_position.Y);
+	FVector globalPosition = LocalToGlobal.TransformPosition(localPositionWithDepth);
+	return globalPosition;
 }
 
-FVector2D MathLib::GlobalToLocal(FVector worldPoint, AActor* referenceActor) {
-	FRotator3d reverseRotation = referenceActor->GetActorRotation().GetInverse();
+FVector2D MathLib::GlobalToLocal(FVector world_point, AActor* reference_actor) {
 
-	FVector relativePoint = reverseRotation.RotateVector(worldPoint - referenceActor->GetActorLocation());
+	FVector basisX = reference_actor->GetActorForwardVector();
+	FVector basisY = reference_actor->GetActorRightVector();
+	FVector basisZ = reference_actor->GetActorUpVector();
+	FVector rootPos = reference_actor->GetActorLocation();
 
-	return FVector2D(relativePoint.Y, relativePoint.Z);
+	FMatrix LocalToGlobal = FMatrix(
+		FPlane(basisX.X, basisX.Y, basisX.Z, 0.0f),
+		FPlane(basisY.X, basisY.Y, basisY.Z, 0.0f),
+		FPlane(basisZ.X, basisZ.Y, basisZ.Z, 0.0f),
+		FPlane(rootPos.X, rootPos.Y, rootPos.Z, 1.0f)
+	);
+
+	FMatrix GlobalToLocal = LocalToGlobal.Inverse();
+	
+	FVector localPosition = GlobalToLocal.TransformPosition(world_point);
+	return FVector2D(localPosition.Y, localPosition.Z);
 }

@@ -123,7 +123,7 @@ Polygon::InterceptTypes UWall_Cutter::getInterceptType(FVector2D const& intercep
 	dir.Normalize(0.01f);
 	dir = intercept_point + dir;
 
-	FVector global = MathLib::LocalToGlobal(dir, actor_origin, actor_rotation, actor_scale.X);
+	FVector global = MathLib::LocalToGlobal(dir, GetOwner(), actor_scale.X);
 	DrawDebugSphere(GetWorld(), global, 15, 10, FColor::Orange, true, -1.0f,-1);
 
 	bool nextPointInWall = wall_polygon_out.pointInsidePolygon(dir);
@@ -210,13 +210,13 @@ void UWall_Cutter::Draw_Polygon(Polygon poly, FString nameOfDraw, bool drawEdges
 	}
 
 	// Get last vertex pos, to create lines from
-	FVector lastGlobal = MathLib::LocalToGlobal(poly.TailNode->data.pos, actor_origin, actor_rotation, actor_scale.X + 0.2);
+	FVector lastGlobal = MathLib::LocalToGlobal(poly.TailNode->data.pos, GetOwner(), actor_scale.X + 0.2);
 
 	int index = 0;
 	Polygon::Vertex* currentVertex = poly.HeadNode;
 	do {
 
-		FVector globalVertexPos = MathLib::LocalToGlobal(currentVertex->data.pos, actor_origin, actor_rotation, actor_scale.X + 0.2);
+		FVector globalVertexPos = MathLib::LocalToGlobal(currentVertex->data.pos, GetOwner(), actor_scale.X + 0.2);
 
 		// Draw Vertex
 		switch (currentVertex->data.type) {
@@ -321,7 +321,7 @@ void UWall_Cutter::DisplayCut() {
 		TArray<FVector> renderableTri;
 
 		for (FVector2D testVec : x.renderableVertices) {
-			renderableTri.Add(MathLib::LocalToGlobal(testVec, actor_origin, actor_rotation, actor_scale.X + 0.1));
+			renderableTri.Add(MathLib::LocalToGlobal(testVec, GetOwner(), actor_scale.X + 0.1));
 		}
 
 		if (x.triangles.Num() == 0) continue;
