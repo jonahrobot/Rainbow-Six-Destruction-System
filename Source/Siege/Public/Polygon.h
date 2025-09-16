@@ -80,16 +80,18 @@ public:
             return *this;
         }
 
-
         Vertex* operator*() {
             return currentVertex;
         }
 
         bool operator==(const PolygonIterator& other) const {
+            // If both point to a empty Polygon, must be equal
+            if (currentVertex == nullptr && other.currentVertex == nullptr) return true;
             return currentVertex == other.currentVertex && loopTimes == other.loopTimes;
         }
 
         bool operator!=(const PolygonIterator& other) const {
+            if (currentVertex == nullptr && other.currentVertex == nullptr) return false;
             return !(currentVertex == other.currentVertex && loopTimes == other.loopTimes);
         }
 

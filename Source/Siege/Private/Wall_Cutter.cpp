@@ -370,7 +370,7 @@ void UWall_Cutter::cutWall(bool shouldRenderRegion = true) {
 	TArray<Polygon::VertexData> visited;
 
 	// Start walk
-	for (Polygon::Vertex* current_vertex : cut_polygon_out) {
+	for (Polygon::Vertex* current_vertex : cut_polygon_out) { // cut_polygon_out has intercept data added
 
 		if (visited.Contains(current_vertex->data) == false && current_vertex->data.type == Polygon::ENTRY) {
 
