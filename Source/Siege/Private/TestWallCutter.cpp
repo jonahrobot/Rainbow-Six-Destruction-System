@@ -49,7 +49,7 @@ public:
 		Polygon expected_cut_poly = Polygon(x.out_cut_poly);
 
 		// Preform cut
-		core->cutWall(false);
+		core->TestCut();
 
 		// Test Wall
 		testsPassed += TestEqual("WallCutter:" + x.testName + " Check wall polygon correct failed", core->wall_polygon_out, expected_wall_poly);

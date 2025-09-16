@@ -36,7 +36,7 @@ public:
 	};
 
 
-	void cutWall(bool shouldRenderRegion);
+	void cutWall(bool delayBetweenNextPhase, bool shouldRenderRegion);
 	void Add_Intercepts(Polygon& wall_polygon, Polygon& cut_polygon);
 
 	// Replicate input from user for testing
@@ -49,7 +49,8 @@ public:
 private:
 	void Draw_Polygon(Polygon poly, FString nameOfDraw, bool drawEdges, bool erasePast);
 
-	void HalfOfCut();
+	void HalfOfCut(bool renderResult, bool delayBetweenNextPhase);
+	void TestCut();
 	void DisplayCut();
 	void AlmostThere(TArray<extrudable> t);
 	void extrudeAndShow(extrudable input);

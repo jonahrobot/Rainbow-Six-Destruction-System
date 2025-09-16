@@ -104,7 +104,7 @@ void UWall_Cutter::startInput() {
 	Draw_Polygon(start_wall_polygon, "Show wall", true, true);
 	Draw_Polygon(start_cut_polygon, "Show Cut", true, false);
 	FTimerHandle UniqueHandle;
-	FTimerDelegate DelayDelegate = FTimerDelegate::CreateUObject(this, &UWall_Cutter::HalfOfCut);
+	FTimerDelegate DelayDelegate = FTimerDelegate::CreateUObject(this, &UWall_Cutter::HalfOfCut, true, true);
 	GetWorld()->GetTimerManager().SetTimer(UniqueHandle,DelayDelegate, 2.f, false);
 }
 
@@ -123,8 +123,8 @@ Polygon::InterceptTypes UWall_Cutter::getInterceptType(FVector2D const& intercep
 	dir.Normalize(0.01f);
 	dir = intercept_point + dir;
 
-	FVector global = MathLib::LocalToGlobal(dir, GetOwner(), actor_scale.X);
-	DrawDebugSphere(GetWorld(), global, 15, 10, FColor::Orange, true, -1.0f,-1);
+	//FVector global = MathLib::LocalToGlobal(dir, GetOwner(), actor_scale.X);
+	//DrawDebugSphere(GetWorld(), global, 15, 10, FColor::Orange, true, -1.0f,-1);
 
 	bool nextPointInWall = wall_polygon_out.pointInsidePolygon(dir);
 
@@ -250,7 +250,11 @@ void UWall_Cutter::Draw_Polygon(Polygon poly, FString nameOfDraw, bool drawEdges
 	} while (currentVertex != poly.HeadNode);
 }
 
-void UWall_Cutter::HalfOfCut() {
+void UWall_Cutter::TestCut() {
+	HalfOfCut(false, false);
+}
+
+void UWall_Cutter::HalfOfCut(bool renderResult, bool delayBetweenNextPhase) {
 	if (start_cut_polygon.Num() <= 2) return;
 
 	wall_polygon_out = start_wall_polygon;
@@ -267,12 +271,19 @@ void UWall_Cutter::HalfOfCut() {
 
 	Add_Intercepts(wall_polygon_out, cut_polygon_out);
 
-	Draw_Polygon(wall_polygon_out, "Show wall", true, true);
-	Draw_Polygon(cut_polygon_out, "Show Cut", true, false);
+	if (renderResult) {
+		Draw_Polygon(wall_polygon_out, "Show wall", true, true);
+		Draw_Polygon(cut_polygon_out, "Show Cut", true, false);
+	}
 
-	FTimerHandle UniqueHandle;
-	FTimerDelegate DelayDelegate = FTimerDelegate::CreateUObject(this, &UWall_Cutter::cutWall, true);
-	GetWorld()->GetTimerManager().SetTimer(UniqueHandle, DelayDelegate, 2.f, false);
+	if (delayBetweenNextPhase) {
+		FTimerHandle UniqueHandle;
+		FTimerDelegate DelayDelegate = FTimerDelegate::CreateUObject(this, &UWall_Cutter::cutWall, true, renderResult);
+		GetWorld()->GetTimerManager().SetTimer(UniqueHandle, DelayDelegate, 2.f, false);
+	}
+	else {
+		cutWall(false, renderResult);
+	}
 }
 
 /*
@@ -360,7 +371,7 @@ void UWall_Cutter::DisplayCut() {
 	GetWorld()->GetTimerManager().SetTimer(UniqueHandle, DelayDelegate, 2.f, false);
 }
 
-void UWall_Cutter::cutWall(bool shouldRenderRegion = true) {
+void UWall_Cutter::cutWall(bool delayBetweenNextPhase, bool shouldRenderRegion = true) {
 
 	if (start_cut_polygon.Num() == 0) {
 		return;
@@ -380,6 +391,8 @@ void UWall_Cutter::cutWall(bool shouldRenderRegion = true) {
 		}
 	}
 
+	if (shouldRenderRegion == false) return;
+
 	UKismetSystemLibrary::FlushPersistentDebugLines(GetWorld());
 	UKismetSystemLibrary::FlushDebugStrings(GetWorld());
 
@@ -387,12 +400,14 @@ void UWall_Cutter::cutWall(bool shouldRenderRegion = true) {
 		Draw_Polygon(toRender, "Show Cut", true, false);
 	}
 
-	if (shouldRenderRegion == false) return;
-
-
-	FTimerHandle UniqueHandle;
-	FTimerDelegate DelayDelegate = FTimerDelegate::CreateUObject(this, &UWall_Cutter::DisplayCut);
-	GetWorld()->GetTimerManager().SetTimer(UniqueHandle, DelayDelegate, 2.f, false);
+	if (delayBetweenNextPhase) {
+		FTimerHandle UniqueHandle;
+		FTimerDelegate DelayDelegate = FTimerDelegate::CreateUObject(this, &UWall_Cutter::DisplayCut);
+		GetWorld()->GetTimerManager().SetTimer(UniqueHandle, DelayDelegate, 2.f, false);
+	}
+	else {
+		UWall_Cutter::DisplayCut();
+	}
 }
 
 void UWall_Cutter::extrudeAndShow(extrudable input) {
