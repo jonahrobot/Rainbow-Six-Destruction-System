@@ -387,6 +387,10 @@ void UWall_Cutter::cutWall(bool delayBetweenNextPhase, bool shouldRenderRegion =
 
 			Polygon new_region = walkLoop(visited, current_vertex, 1);
 
+			if (new_region.isPolygonClockwise() == false) {
+				new_region.flipPolygonVertexOrder();
+			}
+
 			regions.Add(new_region);
 		}
 	}
