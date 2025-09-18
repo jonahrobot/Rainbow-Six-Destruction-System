@@ -155,10 +155,6 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 
 	Polygon oldRef = *this;
 
-	UE_LOG(LogTemp, Warning, TEXT("Triangulated Polygon of size %f"), Num());
-
-	printPolygon();
-
 	Polygon::Vertex* currentNode = HeadNode;
 
 	// Convert polygon vertices 
@@ -208,11 +204,6 @@ bool Polygon::triangulatePolygon(TArray<FVector2D>& out_vertices, FJsonSerializa
 			FVector2D checkingPos = other->data.pos;
 			if (checkingPos != currentNode->data.pos && checkingPos != currentNode->NextNode->data.pos && checkingPos != currentNode->PrevNode->data.pos) { // failing because close data
 				if (triangle.pointInsidePolygon(checkingPos)) {
-					UE_LOG(LogTemp, Warning, TEXT("Point was inside triangle -------"));
-					triangle.printPolygon("Triangle in question");
-					UE_LOG(LogTemp, Warning, TEXT("Point found inside: X=%f, Y=%f"), checkingPos.X, checkingPos.Y);
-					UE_LOG(LogTemp, Warning, TEXT("-------"));
-
 					isValidTriangle = false;
 					break;
 				}
